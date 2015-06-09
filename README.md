@@ -1,6 +1,6 @@
 ## Notice
 
-** Please use emqttd/plugins/emqttd_auth_mysql if your only need authentication with MySQL database.** 
+**Please use emqttd/plugins/emqttd_auth_mysql if your only need authentication with MySQL database.** 
 
 ##  Overview
 
