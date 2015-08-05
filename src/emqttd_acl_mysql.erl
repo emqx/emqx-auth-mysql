@@ -26,7 +26,7 @@
 %%%-----------------------------------------------------------------------------
 -module(emqttd_acl_mysql).
 
--include("emqttd.hrl").
+-include_lib("emqttd/include/emqttd.hrl").
 
 -behaviour(emqttd_acl_mod).
 
