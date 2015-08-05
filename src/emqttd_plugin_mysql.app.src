@@ -1,7 +1,7 @@
 {application, emqttd_plugin_mysql,
  [
-  {description, "emqttd MySQL Authentication Plugin"},
-  {vsn, "1.0"},
+  {description, "emqttd MySQL Authentication/ACL Plugin"},
+  {vsn, "0.9"},
   {registered, []},
   {applications, [
                   kernel,

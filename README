@@ -1,10 +1,11 @@
+
 ## Notice
 
 **Please use emqttd/plugins/emqttd_auth_mysql if your only need authentication with MySQL database.** 
 
 ##  Overview
 
-Authentication, ACL with MySQL Database
+emqttd Authentication, ACL with MySQL Database
 
 ## Usage
 
@@ -14,6 +15,7 @@ In emqttd project:
 
 ```
 git submodule add https://github.com/emqtt/emqttd_plugin_mysql.git plugins/emqttd_plugin_mysql
+make
 ```
 
 ## etc/plugin.config
