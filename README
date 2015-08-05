@@ -1,15 +1,11 @@
 
-## Notice
-
-**Please use emqttd/plugins/emqttd_auth_mysql if your only need authentication with MySQL database.** 
-
-##  Overview
+## Overview
 
 emqttd Authentication, ACL with MySQL Database
 
-## Usage
+## Build Plugin
 
-This project is a plugin of emqttd
+This project is a plugin of emqttd broker.
 
 In emqttd project:
 
@@ -18,7 +14,9 @@ git submodule add https://github.com/emqtt/emqttd_plugin_mysql.git plugins/emqtt
 make
 ```
 
-## etc/plugin.config
+## Configure Plugin
+
+File: etc/plugin.config
 
 ```erlang
 [
@@ -43,6 +41,12 @@ make
 ].
 ```
 
+## Load Plugin
+
+```
+./bin/emqttd_ctl load emqttd_plugin_mysql
+```
+
 ## Users Table(Demo)
 
 Notice: This is a demo table. You could authenticate with any user tables.
@@ -58,8 +62,4 @@ CREATE TABLE `mqtt_users` (
   UNIQUE KEY `mqtt_users_username` (`username`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 ```
-
-## Load Plugin
-
-Merge the'etc/plugin.config' to emqttd/etc/plugins.config, and the plugin will be loaded by the  broker.
 

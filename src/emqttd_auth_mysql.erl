@@ -28,94 +28,52 @@
 
 -author("Feng Lee <feng@emqtt.io>").
 
--include("emqttd.hrl").
+-include_lib("emqttd/include/emqttd.hrl").
 
 -behaviour(emqttd_auth_mod).
 
 -export([init/1, check/3, description/0]).
 
--define(NOT_LOADED, not_loaded(?LINE)).
+-record(state, {user_table, name_field, pass_field, pass_hash}).
 
--record(state, {user_table, name_field, pass_field, user_pk_field, pass_hash, token_table, token_field, token_user_pk_field}).
-
-init(Opts) ->
-  Mapper = proplists:get_value(field_mapper, Opts),
-  {ok, #state{user_table = proplists:get_value(user_table, Opts, auth_user),
-    token_table = proplists:get_value(token_table, Opts, authtoken_token),
-    name_field = proplists:get_value(username, Mapper),
-    user_pk_field = proplists:get_value(user_pk, Mapper),
-    pass_field = proplists:get_value(password, Mapper),
-    token_user_pk_field = proplists:get_value(key, Mapper),
-    token_field = proplists:get_value(user_id, Mapper),
-    pass_hash = proplists:get_value(Opts, password_hash)}}.
+init(Opts) -> 
+    Mapper = proplists:get_value(field_mapper, Opts),
+    {ok, #state{user_table = proplists:get_value(user_table, Opts),
+                name_field = proplists:get_value(username, Mapper),
+                pass_field = proplists:get_value(password, Mapper),
+                pass_hash  = proplists:get_value(password_hash, Opts)}}.
 
 check(#mqtt_client{username = undefined}, _Password, _State) ->
-  {error, "Username undefined"};
+    {error, "Username undefined"};
+check(#mqtt_client{username = <<>>}, _Password, _State) ->
+    {error, "Username undefined"};
 check(_Client, undefined, _State) ->
-  {error, "Password undefined"};
+    {error, "Password undefined"};
+check(_Client, <<>>, _State) ->
+    {error, "Password undefined"};
 check(#mqtt_client{username = Username}, Password,
-    #state{user_table = UserTab, pass_hash = Type,
-      name_field = NameField, pass_field = PassField, token_table = TokenTab, user_pk_field = UserPkField, token_user_pk_field = TokenUserField, token_field = TokenField}) ->
-  Where = {'and', {NameField, Username}, {PassField, hash(Type, Password)}},
-  Where1 = {'and', {NameField, Username}, {TokenField, Password}},
-  Where2 = {'and', Where1, {UserTab ++ "." ++ UserPkField, TokenTab ++ "." ++ TokenUserField}},
-  if Type =:= pbkdf2 ->
-    case emysql:select(UserTab, [PassField], {NameField, Username}) of
-      {ok, []} -> {error, "User not exist"};
-      {ok, Records} ->
-        if length(Records) =:= 1 ->
-          case pbkdf2_check(Password, lists:nth(Records, 1)) of
-            true ->
-              {ok, []};
-            false ->
-              {error, "UserName or Password is invalid"};
-            ErrorInfo ->
-              {error, ErrorInfo}
-          end;
-          true ->
-            {error, "UserName is ambiguous"}
-        end
-    end;
-    Type =:= authtoken ->
-      case emysql:sqlquery(UserTab ++ "," ++ TokenTab, Where2) of
-        {ok, []} -> {error, "Username or Password "};
-        {ok, _Records} -> ok
-      end;
-    true ->
-      case emysql:select(UserTab, Where) of
+      #state{user_table = UserTab, pass_hash = Type,
+             name_field = NameField, pass_field = PassField}) ->
+    Where = {'and', {NameField, Username}, {PassField, hash(Type, Password)}},
+    case emysql:select(UserTab, Where) of
         {ok, []} -> {error, "Username or Password "};
         {ok, _Record} -> ok
-      end
-  end.
+    end.
 
 description() -> "Authentication by MySQL".
 
 hash(plain, Password) ->
-  Password;
+    Password;
 
 hash(md5, Password) ->
-  hexstring(crypto:hash(md5, Password));
+    hexstring(crypto:hash(md5, Password));
 
 hash(sha, Password) ->
-  hexstring(crypto:hash(sha, Password)).
+    hexstring(crypto:hash(sha, Password)).
 
 hexstring(<<X:128/big-unsigned-integer>>) ->
-  lists:flatten(io_lib:format("~32.16.0b", [X]));
+    lists:flatten(io_lib:format("~32.16.0b", [X]));
 
 hexstring(<<X:160/big-unsigned-integer>>) ->
-  lists:flatten(io_lib:format("~40.16.0b", [X])).
-
-not_loaded(Line) ->
-  erlang:nif_error({not_loaded, [{module, ?MODULE}, {line, Line}]}).
-
-pbkdf2_check(Password, Pbkstr) ->
-  case nif_pbkdf2_check(Password, Pbkstr) of
-    {error, _} = Error ->
-      throw(Error);
-    IOData ->
-      IOData
-  end.
-
-nif_pbkdf2_check(Password, Pbkstr) ->
-  ?NOT_LOADED.
+    lists:flatten(io_lib:format("~40.16.0b", [X])).
 
