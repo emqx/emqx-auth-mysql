@@ -5,7 +5,7 @@ emqttd Authentication, ACL with MySQL Database
 
 ## Build Plugin
 
-This project is a plugin of emqttd broker.
+This project is a plugin for emqttd broker.
 
 In emqttd project:
 
