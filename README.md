@@ -9,12 +9,20 @@ This project is a plugin for emqttd broker.
 
 In emqttd project:
 
+If the submodule exists:
+
+```
+git submodule update --remote
+```
+
+Orelse:
+
 ```
 git submodule add https://github.com/erylee/emysql.git plugins/emysql
 
 git submodule add https://github.com/emqtt/emqttd_plugin_mysql.git plugins/emqttd_plugin_mysql
 
-make
+make && make dist
 ```
 
 ## Configure Plugin
@@ -50,8 +58,13 @@ File: etc/plugin.config
 ## Load Plugin
 
 ```
-./bin/emqttd_ctl load emqttd_plugin_mysql
+./bin/emqttd_ctl plugins load emqttd_plugin_mysql
 ```
+
+## Customize Plugin
+
+Fork this project and implement your own authentication/ACL mechanism.
+
 
 ## Users Table(Demo)
 
