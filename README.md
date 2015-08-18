@@ -41,7 +41,7 @@ File: etc/plugin.config
         {encoding, utf8}
 ]},
 {emqttd_plugin_mysql, [
-    {user_table, mqtt_users},
+    {user_table, auth_user},
     %% plain, md5, sha
     {password_hash, plain},
     {field_mapper, [
