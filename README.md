@@ -5,9 +5,7 @@ emqttd Authentication, ACL with MySQL Database
 
 ## Build Plugin
 
-This project is a plugin for emqttd broker.
-
-In emqttd project:
+This project is a plugin for emqttd broker. In emqttd project:
 
 If the submodule exists:
 
