@@ -24,6 +24,7 @@
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
+
 -module(emqttd_auth_mysql).
 
 -author("Feng Lee <feng@emqtt.io>").
@@ -34,46 +35,61 @@
 
 -export([init/1, check/3, description/0]).
 
--record(state, {user_table, name_field, pass_field, pass_hash}).
+-record(state, {auth_sql, hash_type}).
 
-init(Opts) -> 
-    Mapper = proplists:get_value(field_mapper, Opts),
-    {ok, #state{user_table = proplists:get_value(user_table, Opts),
-                name_field = proplists:get_value(username, Mapper),
-                pass_field = proplists:get_value(password, Mapper),
-                pass_hash  = proplists:get_value(password_hash, Opts)}}.
+-define(EMPTY(Username), (Username =:= undefined orelse Username =:= <<>>)).
 
-check(#mqtt_client{username = undefined}, _Password, _State) ->
-    {error, "Username undefined"};
-check(#mqtt_client{username = <<>>}, _Password, _State) ->
-    {error, "Username undefined"};
-check(_Client, undefined, _State) ->
-    {error, "Password undefined"};
-check(_Client, <<>>, _State) ->
-    {error, "Password undefined"};
+init({AuthSql, HashType}) -> 
+    {ok, #state{auth_sql = AuthSql, hash_type = HashType}}.
+
+check(#mqtt_client{username = Username}, Password, _State)
+    when ?EMPTY(Username) orelse ?EMPTY(Password) ->
+    {error, undefined};
+
 check(#mqtt_client{username = Username}, Password,
-      #state{user_table = UserTab, pass_hash = Type,
-             name_field = NameField, pass_field = PassField}) ->
-    Where = {'and', {NameField, Username}, {PassField, hash(Type, Password)}},
-    case emysql:select(UserTab, Where) of
-        {ok, []} -> {error, "Username or Password "};
-        {ok, _Record} -> ok
+        #state{auth_sql = AuthSql, hash_type = HashType}) ->
+    case emysql:sqlquery(replvar(AuthSql, Username)) of
+        {ok, [Record]} ->
+            io:format("~p~n", [Record]),
+            check_pass(lists:sort(Record), Password, HashType);
+        {ok, []} ->
+            {error, notfound}
+    end.
+
+replvar(AuthSql, Username) ->
+    re:replace(AuthSql, "%u", Username, [global, {return, list}]).
+
+check_pass([{password, PassHash}], Password, HashType) ->
+    case PassHash =:= hash(HashType, Password) of
+        true  -> ok;
+        false -> {error, password_error}
+    end;
+check_pass([{password, PassHash}, {salt, Salt}], Password, {salt, HashType}) ->
+    case PassHash =:= hash(HashType, <<Salt/binary, Password/binary>>) of
+        true  -> ok;
+        false -> {error, password_error}
+    end;
+check_pass([{password, PassHash}, {salt, Salt}], Password, {HashType, salt}) ->
+    case PassHash =:= hash(HashType, <<Password/binary, Salt/binary>>) of
+        true  -> ok;
+        false -> {error, password_error}
     end.
 
 description() -> "Authentication by MySQL".
 
-hash(plain, Password) ->
+hash(plain,  Password)  ->
     Password;
-
-hash(md5, Password) ->
+hash(md5,    Password)  ->
     hexstring(crypto:hash(md5, Password));
-
-hash(sha, Password) ->
-    hexstring(crypto:hash(sha, Password)).
+hash(sha,    Password)  ->
+    hexstring(crypto:hash(sha, Password));
+hash(sha256, Password)  ->
+    hexstring(crypto:hash(sha256, Password)).
 
 hexstring(<<X:128/big-unsigned-integer>>) ->
-    lists:flatten(io_lib:format("~32.16.0b", [X]));
-
+    iolist_to_binary(io_lib:format("~32.16.0b", [X]));
 hexstring(<<X:160/big-unsigned-integer>>) ->
-    lists:flatten(io_lib:format("~40.16.0b", [X])).
+    iolist_to_binary(io_lib:format("~40.16.0b", [X]));
+hexstring(<<X:256/big-unsigned-integer>>) ->
+    iolist_to_binary(io_lib:format("~64.16.0b", [X])).
 

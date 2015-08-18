@@ -20,10 +20,11 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% emqttd demo acl module.
+%%% ACL with MySQL Database.
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
+
 -module(emqttd_acl_mysql).
 
 -include_lib("emqttd/include/emqttd.hrl").
@@ -32,39 +33,69 @@
 
 %% ACL callbacks
 -export([init/1, check_acl/2, reload_acl/1, description/0]).
--record(state, {user_table, acl_table, acl_username_field, acl_topic_field, acl_rw_field, user_name_field, user_super_field}).
 
-init(Opts) ->
-  Mapper = proplists:get_value(field_mapper, Opts),
-  State =
-    #state{
-      user_table = proplists:get_value(users_table, Opts, auth_user),
-      user_super_field = proplists:get_value(is_super, Mapper, is_superuser),
-      user_name_field = proplists:get_value(username, Mapper, username),
-      acl_table = proplists:get_value(acls_table, Opts, auth_acl),
-      acl_username_field = proplists:get_value(acl_username, Mapper, username),
-      acl_rw_field = proplists:get_value(acl_rw, Mapper, rw),
-      acl_topic_field = proplists:get_value(acl_topic, Mapper, topic)
-    },
-  {ok, State}.
+-record(state, {acl_sql, acl_nomatch}).
 
-check_acl({#mqtt_client{username = Username}, PubSub, Topic}, #state{user_table = UserTab, acl_table = AclTab, user_name_field = UsernameField, user_super_field = SuperField, acl_topic_field = TopicField, acl_username_field = AclUserField, acl_rw_field = AclRwField}) ->
-  Flag = case PubSub of publish -> 2; subscribe -> 1; pubsub -> 2 end,
-  Where = {'and', {'>=', AclRwField, Flag}, {TopicField, Topic}},
-  Where1 = {'or', {AclUserField, Username}, {AclUserField, "*"}},
-  Where2 = {'and', Where, Where1},
-  case emysql:select(UserTab, {'and', {UsernameField, Username}, {SuperField, 1}}) of
-    {ok, []} ->
-      case emysql:select(UserTab, {UsernameField, Username}) of
-        {ok, []} -> ignore;
-        {ok, _} -> case emysql:select(AclTab, Where2) of
-                     {ok, []} -> deny;
-                     {ok, _Record} -> allow
-                   end
-      end;
-    {ok, _} -> allow
-  end.
+init({AclSql, AclNomatch}) ->
+    {ok, #state{acl_sql = AclSql, acl_nomatch = AclNomatch}}.
 
-reload_acl(_State) -> ok.
+check_acl({#mqtt_client{username = <<$$, _/binary>>}, _PubSub, _Topic}, _State) ->
+    {error, bad_username};
 
-description() -> "ACL Module by Mysql".
+check_acl({Client = #mqtt_client{client_id = ClientId,
+                                 username = Username,
+                                 peername = {IpAddr, _}},
+           PubSub, Topic}, #state{acl_sql = AclSql0}) ->
+
+    Vars = [{"%u", Username}, {"%c", ClientId}, {"%a", inet_parse:ntoa(IpAddr)}],
+    AclSql = lists:foldl(fun({Var, Val}, Sql) -> replvar(Sql, Var, Val) end, AclSql0, Vars),
+    case emysql:select(AclSql) of
+        {ok, []} ->
+            allow;
+        {ok, Rules} ->
+            check_rule(Client, compile(Rules))
+    end.
+
+replvar(Sql, Var, Val) ->
+    re:replace(Sql, Var, Val, [global, {return, list}]).
+
+compile(Rules) ->
+    compile(Rules, []).
+
+compile([], Acc) ->
+    Acc;
+compile([Rule|T], Acc) ->
+    Who  = who(g(ipaddr, Rule), g(username, Rule), g(clientid, Rule)),
+    Term = {allow(g(allow, Rule)), Who, access(g(access, Rule)), topic(g(topic, Rule))},
+    compile(T, [emqttd_access_rule:compile(Term) | Acc]).
+
+who(_, <<"$all">>, _) ->
+    all;
+who(CIDR, undefined, undefined) ->
+    {ipaddr, CIDR};
+who(undefined, Username, undefined) ->
+    {user, Username};
+who(undefined, undefined, ClientId) ->
+    {client, ClientId}.
+
+allow(1)  -> allow;
+allow(0)  -> deny.
+
+access(1) -> subscribe;
+access(2) -> publish;
+access(3) -> pubsub.
+
+topic(<<"eq ", Topic/binary>>) ->
+    {eq, Topic};
+topic(Topic) ->
+    Topic.
+
+reload_acl(_State) ->
+    ok.
+
+description() ->
+    "ACL Module by Mysql".
+
+g(K, L) ->
+    proplists:get_value(K, L).
+
