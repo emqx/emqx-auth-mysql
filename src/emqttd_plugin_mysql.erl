@@ -27,6 +27,8 @@
 
 -module(emqttd_plugin_mysql).
 
+-author("Feng Lee <feng@emqtt.io>").
+
 -behaviour(application).
 
 %% Application callbacks
@@ -42,11 +44,21 @@
 %%%=============================================================================
 
 start(_StartType, _StartArgs) ->
-    register_authmods(),
+    {ok, AuthSql}  = application:get_env(?MODULE, authquery),
+    {ok, HashType} = application:get_env(?MODULE, password_hash),
+    ok = emqttd_access_control:register_mod(auth, emqttd_auth_mysql, {AuthSql, HashType}),
+    with_acl_enabled(fun(AclSql) ->
+        {ok, AclNomatch} = application:get_env(?MODULE, acl_nomatch),
+        ok = emqttd_access_control:register_mod(acl, emqttd_acl_mysql, {AclSql, AclNomatch})
+    end),
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 prep_stop(State) ->
-    unregister_authmods(), State.
+    emqttd_access_control:unregister_mod(auth, emqttd_auth_mysql),
+    with_acl_enabled(fun(_AclSql) ->
+        emqttd_access_control:unregister_mod(acl, emqttd_acl_mysql)
+    end),
+    State.
 
 stop(_State) ->
     ok.
@@ -58,25 +70,9 @@ stop(_State) ->
 init([]) ->
     {ok, { {one_for_one, 5, 10}, []} }.
 
-register_authmods() ->
-    {ok, AuthSql}  = application:get_env(?MODULE, authquery),
-    {ok, HashType} = application:get_env(?MODULE, password_hash),
-    ok = emqttd_access_control:register_mod(auth, emqttd_auth_mysql, {AuthSql, HashType}),
-    with_acl_enabled(fun(AclSql) ->
-        {ok, AclNomatch} = application:get_env(?MODULE, acl_nomatch),
-        ok = emqttd_access_control:register_mod(acl, emqttd_acl_mysql, {AclSql, AclNomatch})
-    end).
-
-unregister_authmods() ->
-    emqttd_access_control:unregister_mod(auth, emqttd_auth_mysql),
-    with_acl_enabled(fun(_AclSql) ->
-        emqttd_access_control:unregister_mod(acl, emqttd_acl_mysql)
-    end).
-
 with_acl_enabled(Fun) ->
     case application:get_env(?MODULE, aclquery) of
         {ok, AclSql} -> Fun(AclSql);
         undefined    -> ok
     end.
-
 

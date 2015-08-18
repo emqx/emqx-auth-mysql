@@ -27,6 +27,8 @@
 
 -module(emqttd_acl_mysql).
 
+-author("Feng Lee <feng@emqtt.io>").
+
 -include_lib("emqttd/include/emqttd.hrl").
 
 -behaviour(emqttd_acl_mod).
@@ -43,30 +45,46 @@ check_acl({#mqtt_client{username = <<$$, _/binary>>}, _PubSub, _Topic}, _State) 
     {error, bad_username};
 
 check_acl({Client = #mqtt_client{client_id = ClientId,
-                                 username = Username,
-                                 peername = {IpAddr, _}},
-           PubSub, Topic}, #state{acl_sql = AclSql0}) ->
+                                 username  = Username,
+                                 peername  = {IpAddr, _}},
+           PubSub, Topic}, #state{acl_sql = AclSql0, acl_nomatch = Default}) ->
 
     Vars = [{"%u", Username}, {"%c", ClientId}, {"%a", inet_parse:ntoa(IpAddr)}],
-    AclSql = lists:foldl(fun({Var, Val}, Sql) -> replvar(Sql, Var, Val) end, AclSql0, Vars),
+    AclSql = lists:foldl(fun({Var, Val}, Sql) -> feed_var(Sql, Var, Val) end, AclSql0, Vars),
     case emysql:select(AclSql) of
         {ok, []} ->
-            allow;
-        {ok, Rules} ->
-            check_rule(Client, compile(Rules))
+            Default;
+        {ok, Rows} ->
+            Rules = filter(PubSub, compile(Rows)),
+            case match(Client, Topic, Rules) of
+                {matched, allow} -> allow;
+                {matched, deny}  -> deny;
+                nomatch          -> Default
+            end
     end.
 
-replvar(Sql, Var, Val) ->
+feed_var(Sql, Var, Val) ->
     re:replace(Sql, Var, Val, [global, {return, list}]).
 
-compile(Rules) ->
-    compile(Rules, []).
+match(_Client, _Topic, []) ->
+    nomatch;
 
+match(Client, Topic, [Rule|Rules]) ->
+    case emqttd_access_rule:match(Client, Topic, Rule) of
+        nomatch -> match(Client, Topic, Rules);
+        {matched, AllowDeny} -> {matched, AllowDeny}
+    end.
+
+filter(PubSub, Rules) ->
+    [Term || Term = {_, _, Access, _} <- Rules, Access =:= PubSub orelse Access =:= pubsub].
+
+compile(Rows) ->
+    compile(Rows, []).
 compile([], Acc) ->
     Acc;
-compile([Rule|T], Acc) ->
-    Who  = who(g(ipaddr, Rule), g(username, Rule), g(clientid, Rule)),
-    Term = {allow(g(allow, Rule)), Who, access(g(access, Rule)), topic(g(topic, Rule))},
+compile([Row|T], Acc) ->
+    Who  = who(g(ipaddr, Row), g(username, Row), g(clientid, Row)),
+    Term = {allow(g(allow, Row)), Who, access(g(access, Row)), topic(g(topic, Row))},
     compile(T, [emqttd_access_rule:compile(Term) | Acc]).
 
 who(_, <<"$all">>, _) ->
