@@ -44,14 +44,10 @@ init({AclSql, AclNomatch}) ->
 check_acl({#mqtt_client{username = <<$$, _/binary>>}, _PubSub, _Topic}, _State) ->
     {error, bad_username};
 
-check_acl({Client = #mqtt_client{client_id = ClientId,
-                                 username  = Username,
-                                 peername  = {IpAddr, _}},
-           PubSub, Topic}, #state{acl_sql = AclSql0, acl_nomatch = Default}) ->
+check_acl({Client, PubSub, Topic}, #state{acl_sql = AclSql,
+                                          acl_nomatch = Default}) ->
 
-    Vars = [{"%u", Username}, {"%c", ClientId}, {"%a", inet_parse:ntoa(IpAddr)}],
-    AclSql = lists:foldl(fun({Var, Val}, Sql) -> feed_var(Sql, Var, Val) end, AclSql0, Vars),
-    case emysql:select(AclSql) of
+    case emysql:sqlquery(feed_var(Client, AclSql)) of
         {ok, []} ->
             Default;
         {ok, Rows} ->
@@ -62,6 +58,12 @@ check_acl({Client = #mqtt_client{client_id = ClientId,
                 nomatch          -> Default
             end
     end.
+
+feed_var(#mqtt_client{client_id = ClientId,
+                      username  = Username,
+                      peername  = {IpAddr, _}}, AclSql) ->
+    Vars = [{"%u", Username}, {"%c", ClientId}, {"%a", inet_parse:ntoa(IpAddr)}],
+    lists:foldl(fun({Var, Val}, Sql) -> feed_var(Sql, Var, Val) end, AclSql, Vars).
 
 feed_var(Sql, Var, Val) ->
     re:replace(Sql, Var, Val, [global, {return, list}]).
@@ -84,13 +86,13 @@ compile([], Acc) ->
     Acc;
 compile([Row|T], Acc) ->
     Who  = who(g(ipaddr, Row), g(username, Row), g(clientid, Row)),
-    Term = {allow(g(allow, Row)), Who, access(g(access, Row)), topic(g(topic, Row))},
+    Term = {allow(g(allow, Row)), Who, access(g(access, Row)), [topic(g(topic, Row))]},
     compile(T, [emqttd_access_rule:compile(Term) | Acc]).
 
 who(_, <<"$all">>, _) ->
     all;
 who(CIDR, undefined, undefined) ->
-    {ipaddr, CIDR};
+    {ipaddr, binary_to_list(CIDR)};
 who(undefined, Username, undefined) ->
     {user, Username};
 who(undefined, undefined, ClientId) ->
