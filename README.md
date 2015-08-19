@@ -3,6 +3,7 @@
 
 emqttd Authentication, ACL with MySQL Database
 
+
 ## Build Plugin
 
 This project is a plugin for emqttd broker. In emqttd project:
@@ -23,6 +24,7 @@ git submodule add https://github.com/emqtt/emqttd_plugin_mysql.git plugins/emqtt
 make && make dist
 ```
 
+
 ## Configure Plugin
 
 File: etc/plugin.config
@@ -31,13 +33,14 @@ File: etc/plugin.config
 [
 {emysql, [
     {pool, 4},
-        {host, "localhost"},
-        {port, 3306},
-        {username, "root"},
-        {password, "root"},
-        {database, "emqtt"},
-        {encoding, utf8}
+    {host, "localhost"},
+    {port, 3306},
+    {username, ""},
+    {password, ""},
+    {database, "mqtt"},
+    {encoding, utf8}
 ]},
+
 {emqttd_plugin_mysql, [
 
     %% select password only
@@ -75,16 +78,12 @@ Import mqtt.sql to your database.
 ./bin/emqttd_ctl plugins load emqttd_plugin_mysql
 ```
 
-## Customize Plugin
-
-Fork this project and implement your own authentication/ACL mechanism.
-
 
 ## User Table(Demo)
 
 Notice: This is a demo table. You could authenticate with any user table.
 
-```
+```sql
 CREATE TABLE `mqtt_user` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(100) DEFAULT NULL,
@@ -99,7 +98,7 @@ CREATE TABLE `mqtt_user` (
 
 ## ACL Table
 
-```
+```sql
 CREATE TABLE `mqtt_acl` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `allow` int(1) DEFAULT NULL COMMENT '0: deny, 1: allow',
@@ -115,5 +114,7 @@ CREATE TABLE `mqtt_acl` (
 
 ## Support
 
-Contact feng@emqtt.io
+Fork this project and implement your own authentication/ACL mechanism.
+
+Contact feng@emqtt.io if any issues.
 
