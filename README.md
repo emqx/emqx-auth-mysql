@@ -79,7 +79,7 @@ Import mqtt.sql to your database.
 ```
 
 
-## User Table(Demo)
+## Auth Table(Demo)
 
 Notice: This is a demo table. You could authenticate with any user table.
 
@@ -110,7 +110,6 @@ CREATE TABLE `mqtt_acl` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ```
-
 
 ## Support
 
