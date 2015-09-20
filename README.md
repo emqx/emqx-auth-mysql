@@ -17,8 +17,6 @@ git submodule update --remote
 Orelse:
 
 ```
-git submodule add https://github.com/erylee/emysql.git plugins/emysql
-
 git submodule add https://github.com/emqtt/emqttd_plugin_mysql.git plugins/emqttd_plugin_mysql
 
 make && make dist
