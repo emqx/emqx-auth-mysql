@@ -50,7 +50,6 @@ check(#mqtt_client{username = Username}, Password,
         #state{auth_sql = AuthSql, hash_type = HashType}) ->
     case emysql:sqlquery(replvar(AuthSql, Username)) of
         {ok, [Record]} ->
-            io:format("~p~n", [Record]),
             check_pass(lists:sort(Record), Password, HashType);
         {ok, []} ->
             {error, notfound}
