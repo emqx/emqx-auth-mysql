@@ -24,12 +24,11 @@
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
-
 -module(emqttd_auth_mysql).
 
 -author("Feng Lee <feng@emqtt.io>").
 
--include_lib("emqttd/include/emqttd.hrl").
+-include("../../../include/emqttd.hrl").
 
 -behaviour(emqttd_auth_mod).
 
