@@ -4,6 +4,8 @@
 
 Support 'and', 'or' ACL Rule
 
+Bugfix: emqtt_acl_mysql function_clause error (#4)
+
 
 0.10.0-beta (2015-08-20)
 -------------------------
