@@ -90,12 +90,14 @@ compile([Row|T], Acc) ->
 
 who(_, <<"$all">>, _) ->
     all;
-who(CIDR, undefined, undefined) ->
-    {ipaddr, binary_to_list(CIDR)};
-who(undefined, Username, undefined) ->
-    {user, Username};
-who(undefined, undefined, ClientId) ->
-    {client, ClientId}.
+who(undefined, undefined, undefined) ->
+    throw(undefined_who);
+who(CIDR, Username, ClientId) ->
+    Cols = [{ipaddr, b2l(CIDR)}, {user, Username}, {client, ClientId}],
+    case [{C, V} || {C, V} <- Cols, V =/= undefined] of
+        [Who] -> Who;
+        Conds -> {'and', Conds}
+    end.
 
 allow(1)  -> allow;
 allow(0)  -> deny.
@@ -117,4 +119,7 @@ description() ->
 
 g(K, L) ->
     proplists:get_value(K, L).
+
+b2l(undefined) -> undefined;
+b2l(B)         -> binary_to_list(B).
 
