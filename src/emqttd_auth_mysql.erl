@@ -19,18 +19,15 @@
 %%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
-%%% @doc
-%%% Authentication with MySQL Database.
+%%% @doc Authentication with MySQL Database.
 %%%
-%%% @end
+%%% @author Feng Lee <feng@emqtt.io>
 %%%-----------------------------------------------------------------------------
 -module(emqttd_auth_mysql).
 
--author("Feng Lee <feng@emqtt.io>").
+-behaviour(emqttd_auth_mod).
 
 -include("../../../include/emqttd.hrl").
-
--behaviour(emqttd_auth_mod).
 
 -export([init/1, check/3, description/0]).
 

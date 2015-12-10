@@ -19,18 +19,15 @@
 %%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
-%%% @doc
-%%% ACL with MySQL Database.
+%%% @doc ACL with MySQL Database
 %%%
-%%% @end
+%%% @author Feng Lee <feng@emqtt.io>
 %%%-----------------------------------------------------------------------------
 -module(emqttd_acl_mysql).
 
--author("Feng Lee <feng@emqtt.io>").
+-behaviour(emqttd_acl_mod).
 
 -include("../../../include/emqttd.hrl").
-
--behaviour(emqttd_acl_mod).
 
 %% ACL callbacks
 -export([init/1, check_acl/2, reload_acl/1, description/0]).

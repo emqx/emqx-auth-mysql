@@ -19,14 +19,11 @@
 %%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
-%%% @doc
-%%% emqttd MySQL Authentication/ACL Application.
+%%% @doc MySQL Authentication/ACL Application
 %%%
-%%% @end
+%%% @author Feng Lee <feng@emqtt.io>
 %%%-----------------------------------------------------------------------------
 -module(emqttd_plugin_mysql).
-
--author("Feng Lee <feng@emqtt.io>").
 
 -behaviour(application).
 
