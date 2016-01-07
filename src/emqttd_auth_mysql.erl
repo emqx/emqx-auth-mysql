@@ -44,27 +44,31 @@ check(#mqtt_client{username = Username}, Password, _State)
 
 check(#mqtt_client{username = Username}, Password,
         #state{auth_sql = AuthSql, hash_type = HashType}) ->
-    case emysql:sqlquery(replvar(AuthSql, Username)) of
-        {ok, [Record]} ->
-            check_pass(lists:sort(Record), Password, HashType);
+    case emqttd_mysql_client:query(replvar(AuthSql, Username)) of
+        {ok, [<<"password">>], [[PassHash]]} ->
+            check_pass(PassHash, Password, HashType);
+        {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
+            check_pass(PassHash, Salt, Password, HashType);
         {ok, []} ->
-            {error, notfound}
+            {error, notfound};
+        {error, Error} ->
+            {error, Error}
     end.
 
 replvar(AuthSql, Username) ->
     re:replace(AuthSql, "%u", Username, [global, {return, list}]).
 
-check_pass([{password, PassHash}], Password, HashType) ->
+check_pass(PassHash, Password, HashType) ->
     case PassHash =:= hash(HashType, Password) of
         true  -> ok;
         false -> {error, password_error}
-    end;
-check_pass([{password, PassHash}, {salt, Salt}], Password, {salt, HashType}) ->
+    end.
+check_pass(PassHash, Salt, Password, {salt, HashType}) ->
     case PassHash =:= hash(HashType, <<Salt/binary, Password/binary>>) of
         true  -> ok;
         false -> {error, password_error}
     end;
-check_pass([{password, PassHash}, {salt, Salt}], Password, {HashType, salt}) ->
+check_pass(PassHash, Salt, Password, {HashType, salt}) ->
     case PassHash =:= hash(HashType, <<Password/binary, Salt/binary>>) of
         true  -> ok;
         false -> {error, password_error}
