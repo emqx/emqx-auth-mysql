@@ -3,6 +3,8 @@
 
 emqttd Authentication, ACL with MySQL Database
 
+Notice: changed mysql driver to [mysql-otp](https://github.com/mysql-otp/mysql-otp).
+
 
 ## Build Plugin
 
@@ -29,17 +31,23 @@ File: etc/plugin.config
 
 ```erlang
 [
-{emysql, [
-    {pool, 4},
-    {host, "localhost"},
-    {port, 3306},
-    {username, ""},
-    {password, ""},
-    {database, "mqtt"},
-    {encoding, utf8}
-]},
 
 {emqttd_plugin_mysql, [
+
+    {mysql_pool, [
+        %% ecpool options
+        {pool_size, 4},
+        {pool_type, random},
+        {auto_reconnect, 3},
+
+        %% mysql options
+        {host,     "localhost"},
+        {port,     3306},
+        {user,     ""},
+        {password, ""},
+        {database, "mqtt"},
+        {encoding, utf8}
+    ]},
 
     %% select password only
     {authquery, "select password from mqtt_user where username = '%u' limit 1"},

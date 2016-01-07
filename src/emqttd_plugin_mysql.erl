@@ -64,7 +64,12 @@ stop(_State) ->
 %%%=============================================================================
 
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, []} }.
+
+    {ok, Env} = application:get_env(emqttd_plugin_mysql, mysql_pool),
+
+    Pool = ecpool:pool_spec(mysql_pool, mysql_pool, emqttd_mysql_pool, Env),
+
+    {ok, { {one_for_all, 5, 100}, [Pool]} }.
 
 with_acl_enabled(Fun) ->
     case application:get_env(?MODULE, aclquery) of

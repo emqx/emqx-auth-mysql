@@ -43,10 +43,10 @@ check_acl({#mqtt_client{username = <<$$, _/binary>>}, _PubSub, _Topic}, _State) 
 check_acl({Client, PubSub, Topic}, #state{acl_sql = AclSql,
                                           acl_nomatch = Default}) ->
 
-    case emysql:sqlquery(feed_var(Client, AclSql)) of
-        {ok, []} ->
+    case emqttd_mysql_pool:query(feed_var(Client, AclSql)) of
+        {ok, _Columns, []} ->
             Default;
-        {ok, Rows} ->
+        {ok, _Columns, Rows} ->
             Rules = filter(PubSub, compile(Rows)),
             case match(Client, Topic, Rules) of
                 {matched, allow} -> allow;
@@ -80,28 +80,33 @@ compile(Rows) ->
     compile(Rows, []).
 compile([], Acc) ->
     Acc;
-compile([Row|T], Acc) ->
-    Who  = who(g(ipaddr, Row), g(username, Row), g(clientid, Row)),
-    Term = {allow(g(allow, Row)), Who, access(g(access, Row)), [topic(g(topic, Row))]},
+compile([[Allow, IpAddr, Username, ClientId, Access, Topic]|T], Acc) ->
+    Who  = who(IpAddr, Username, ClientId),
+    Term = {allow(Allow), Who, access(Access), [topic(Topic)]},
     compile(T, [emqttd_access_rule:compile(Term) | Acc]).
 
 who(_, <<"$all">>, _) ->
     all;
-who(undefined, undefined, undefined) ->
+who(null, null, null) ->
     throw(undefined_who);
 who(CIDR, Username, ClientId) ->
     Cols = [{ipaddr, b2l(CIDR)}, {user, Username}, {client, ClientId}],
-    case [{C, V} || {C, V} <- Cols, V =/= undefined] of
+    case [{C, V} || {C, V} <- Cols, V =/= null] of
         [Who] -> Who;
         Conds -> {'and', Conds}
     end.
 
 allow(1)  -> allow;
-allow(0)  -> deny.
+allow(0)  -> deny;
+allow(<<"1">>)  -> allow;
+allow(<<"0">>)  -> deny.
 
 access(1) -> subscribe;
 access(2) -> publish;
-access(3) -> pubsub.
+access(3) -> pubsub;
+access(<<"1">>) -> subscribe;
+access(<<"2">>) -> publish;
+access(<<"3">>) -> pubsub.
 
 topic(<<"eq ", Topic/binary>>) ->
     {eq, Topic};
@@ -114,9 +119,6 @@ reload_acl(_State) ->
 description() ->
     "ACL Module by Mysql".
 
-g(K, L) ->
-    proplists:get_value(K, L).
-
-b2l(undefined) -> undefined;
-b2l(B)         -> binary_to_list(B).
+b2l(null) -> null;
+b2l(B)    -> binary_to_list(B).
 
