@@ -44,7 +44,7 @@ check(#mqtt_client{username = Username}, Password, _State)
 
 check(#mqtt_client{username = Username}, Password,
         #state{auth_sql = AuthSql, hash_type = HashType}) ->
-    case emqttd_mysql_client:query(replvar(AuthSql, Username)) of
+    case emqttd_mysql_pool:query(replvar(AuthSql, Username)) of
         {ok, [<<"password">>], [[PassHash]]} ->
             check_pass(PassHash, Password, HashType);
         {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->

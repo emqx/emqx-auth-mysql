@@ -43,7 +43,7 @@ check_acl({#mqtt_client{username = <<$$, _/binary>>}, _PubSub, _Topic}, _State) 
 check_acl({Client, PubSub, Topic}, #state{acl_sql = AclSql,
                                           acl_nomatch = Default}) ->
 
-    case emqttd_mysql_client:query(feed_var(Client, AclSql)) of
+    case emqttd_mysql_pool:query(feed_var(Client, AclSql)) of
         {ok, _Columns, []} ->
             Default;
         {ok, _Columns, Rows} ->
