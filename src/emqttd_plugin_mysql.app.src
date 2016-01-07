@@ -6,7 +6,8 @@
   {applications, [
                   kernel,
                   stdlib,
-                  emysql
+                  mysql,
+                  ecpool
                  ]},
   {mod, {emqttd_plugin_mysql, []}},
   {env, []}
