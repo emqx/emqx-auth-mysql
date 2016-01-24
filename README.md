@@ -37,7 +37,7 @@ File: etc/plugin.config
     {mysql_pool, [
         %% ecpool options
         {pool_size, 4},
-        {pool_type, random},
+        {pool_type, round_robin},
         {auto_reconnect, 3},
 
         %% mysql options

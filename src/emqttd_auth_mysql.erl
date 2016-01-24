@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% Copyright (c) 2012-2015 eMQTT.IO, All Rights Reserved.
+%%% Copyright (c) 2012-2016 eMQTT.IO, All Rights Reserved.
 %%%
 %%% Permission is hereby granted, free of charge, to any person obtaining a copy
 %%% of this software and associated documentation files (the "Software"), to deal
@@ -59,36 +59,16 @@ replvar(AuthSql, Username) ->
     re:replace(AuthSql, "%u", Username, [global, {return, list}]).
 
 check_pass(PassHash, Password, HashType) ->
-    case PassHash =:= hash(HashType, Password) of
-        true  -> ok;
-        false -> {error, password_error}
-    end.
+    check_pass(PassHash, hash(HashType, Password)).
 check_pass(PassHash, Salt, Password, {salt, HashType}) ->
-    case PassHash =:= hash(HashType, <<Salt/binary, Password/binary>>) of
-        true  -> ok;
-        false -> {error, password_error}
-    end;
+    check_pass(PassHash, hash(HashType, <<Salt/binary, Password/binary>>));
 check_pass(PassHash, Salt, Password, {HashType, salt}) ->
-    case PassHash =:= hash(HashType, <<Password/binary, Salt/binary>>) of
-        true  -> ok;
-        false -> {error, password_error}
-    end.
+    check_pass(PassHash, hash(HashType, <<Password/binary, Salt/binary>>)).
+
+check_pass(PassHash, PassHash) -> ok;
+check_pass(_, _)               -> {error, password_error}.
 
 description() -> "Authentication by MySQL".
 
-hash(plain,  Password)  ->
-    Password;
-hash(md5,    Password)  ->
-    hexstring(crypto:hash(md5, Password));
-hash(sha,    Password)  ->
-    hexstring(crypto:hash(sha, Password));
-hash(sha256, Password)  ->
-    hexstring(crypto:hash(sha256, Password)).
-
-hexstring(<<X:128/big-unsigned-integer>>) ->
-    iolist_to_binary(io_lib:format("~32.16.0b", [X]));
-hexstring(<<X:160/big-unsigned-integer>>) ->
-    iolist_to_binary(io_lib:format("~40.16.0b", [X]));
-hexstring(<<X:256/big-unsigned-integer>>) ->
-    iolist_to_binary(io_lib:format("~64.16.0b", [X])).
+hash(Type, Password) -> emqttd_auth_mod:passwd_hash(Type, Password).
 
