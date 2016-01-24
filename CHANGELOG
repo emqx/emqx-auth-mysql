@@ -6,6 +6,8 @@ MySQL driver: github.com/mysql-otp/mysql-otp
 
 Integrate with ecpool library
 
+Use emqttd_auth_mod:passwd_hash/2 api
+
 0.13.0-beta (2015-11-05)
 -------------------------
 
