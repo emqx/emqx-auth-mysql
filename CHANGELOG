@@ -1,11 +1,17 @@
 
+0.15.0-beta (2016-01-28)
+-------------------------
+
+MySQL driver: github.com/mysql-otp/mysql-otp
+
+Integrate with ecpool library
+
 0.13.0-beta (2015-11-05)
 -------------------------
 
 Support 'and', 'or' ACL Rule
 
 Bugfix: emqtt_acl_mysql function_clause error (#4)
-
 
 0.10.0-beta (2015-08-20)
 -------------------------
