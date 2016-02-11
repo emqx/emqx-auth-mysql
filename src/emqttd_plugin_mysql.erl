@@ -15,7 +15,6 @@
 %%--------------------------------------------------------------------
 
 %% @doc MySQL Authentication/ACL Application
-%% @author Feng Lee <feng@emqtt.io>
 -module(emqttd_plugin_mysql).
 
 -behaviour(application).

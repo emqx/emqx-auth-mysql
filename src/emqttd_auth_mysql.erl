@@ -15,7 +15,6 @@
 %%--------------------------------------------------------------------
 
 %% @doc Authentication with MySQL Database.
-%% @author Feng Lee <feng@emqtt.io>
 -module(emqttd_auth_mysql).
 
 -behaviour(emqttd_auth_mod).

@@ -15,7 +15,6 @@
 %%--------------------------------------------------------------------
 
 %% @doc emqttd mysql connection pool client
-%% @author Feng Lee <feng@emqtt.io>
 -module(emqttd_mysql_pool).
 
 -behaviour(ecpool_worker).
