@@ -1,12 +1,20 @@
 
-## Overview
+emqttd_auth_mysql
+=================
+
+TODO:...
+
+Overview
+--------
 
 emqttd Authentication, ACL with MySQL Database
 
 Notice: changed mysql driver to [mysql-otp](https://github.com/mysql-otp/mysql-otp).
 
+TODO:...
 
-## Build Plugin
+Build Plugin
+-------------
 
 This project is a plugin for emqttd broker. In emqttd project:
 
@@ -24,8 +32,8 @@ git submodule add https://github.com/emqtt/emqttd_plugin_mysql.git plugins/emqtt
 make && make dist
 ```
 
-
-## Configure Plugin
+Configuration
+-------------
 
 File: etc/plugin.config
 
@@ -117,7 +125,8 @@ CREATE TABLE `mqtt_acl` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ```
 
-## Support
+Support
+-------
 
 Fork this project and implement your own authentication/ACL mechanism.
 

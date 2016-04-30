@@ -15,7 +15,7 @@
 %%--------------------------------------------------------------------
 
 %% @doc MySQL Authentication/ACL Application
--module(emqttd_plugin_mysql).
+-module(emqttd_auth_mysql_app).
 
 -behaviour(application).
 
