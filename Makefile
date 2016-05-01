@@ -10,6 +10,8 @@ dep_emqttd = git https://github.com/emqtt/emqttd plus
 
 ERLC_OPTS += +'{parse_transform, lager_transform}'
 
+COVER = true
+
 include erlang.mk
 
 app:: rebar.config

@@ -13,3 +13,7 @@ rel/example_project
 .rebar
 .erlang.mk/
 emqttd_auth_mysql.d
+ct.coverdata
+logs/
+test/ct.cover.spec
+test/*.beam
