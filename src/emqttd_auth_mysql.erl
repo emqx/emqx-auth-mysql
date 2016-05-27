@@ -23,32 +23,33 @@
 
 -export([init/1, check/3, description/0]).
 
--record(state, {auth_sql, hash_type}).
+-record(state, {super_query, auth_query, hash_type}).
 
 -define(EMPTY(Username), (Username =:= undefined orelse Username =:= <<>>)).
 
-init({AuthSql, HashType}) -> 
-    {ok, #state{auth_sql = AuthSql, hash_type = HashType}}.
+init({SuperQuery, AuthQuery, HashType}) ->
+    {ok, #state{super_query = SuperQuery, auth_query = AuthQuery, hash_type = HashType}}.
 
 check(#mqtt_client{username = Username}, Password, _State)
     when ?EMPTY(Username) orelse ?EMPTY(Password) ->
     {error, undefined};
 
-check(#mqtt_client{username = Username}, Password,
-        #state{auth_sql = AuthSql, hash_type = HashType}) ->
-    case emqttd_mysql_pool:query(replvar(AuthSql, Username)) of
-        {ok, [<<"password">>], [[PassHash]]} ->
-            check_pass(PassHash, Password, HashType);
-        {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
-            check_pass(PassHash, Salt, Password, HashType);
-        {ok, []} ->
-            {error, notfound};
-        {error, Error} ->
-            {error, Error}
+check(Client, Password, #state{super_query = SuperQuery,
+                               auth_sql    = {AuthSql, AuthParams},
+                               hash_type   = HashType}) ->
+    case emqttd_plugin_mysql:is_superuser(SuperQuery, Client) of
+        false -> case emqttd_plugin_mysql:query(AuthSql, AuthParams, Client) of
+                    {ok, [<<"password">>], [[PassHash]]} ->
+                        check_pass(PassHash, Password, HashType);
+                    {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
+                        check_pass(PassHash, Salt, Password, HashType);
+                    {ok, []} ->
+                        {error, notfound};
+                    {error, Error} ->
+                        {error, Error}
+                 end;
+        true  -> ok
     end.
-
-replvar(AuthSql, Username) ->
-    re:replace(AuthSql, "%u", Username, [global, {return, list}]).
 
 check_pass(PassHash, Password, HashType) ->
     check_pass(PassHash, hash(HashType, Password)).
@@ -60,7 +61,7 @@ check_pass(PassHash, Salt, Password, {HashType, salt}) ->
 check_pass(PassHash, PassHash) -> ok;
 check_pass(_, _)               -> {error, password_error}.
 
-description() -> "Authentication by MySQL".
+description() -> "Authentication with MySQL".
 
 hash(Type, Password) -> emqttd_auth_mod:passwd_hash(Type, Password).
 

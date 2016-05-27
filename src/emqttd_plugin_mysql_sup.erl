@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2012-2016 Feng Lee <feng@emqtt.io>.
+%% Copyright (c) 2016 Feng Lee <feng@emqtt.io>.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -14,27 +14,29 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc emqttd mysql connection pool client
--module(emqttd_mysql_pool).
+-module(emqttd_plugin_mysql_sup).
 
--behaviour(ecpool_worker).
+-behaviour(supervisor).
 
--export([connect/1, client/0, query/1, query/2, query/3]).
+-export([start_link/0]).
 
--define(POOL, mysql_pool).
+%% Supervisor callbacks
+-export([init/1]).
 
-connect(Options) ->
-    mysql:start_link(Options).
+-define(APP, emqttd_plugin_mysql).
 
-client() ->
-    ecpool:get_client(?POOL).
+start_link() ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-query(Query) ->
-    ecpool:with_client(?POOL, fun(C) -> mysql:query(C, Query) end).
+%%--------------------------------------------------------------------
+%% Supervisor callbacks
+%%--------------------------------------------------------------------
 
-query(Query, Params) ->
-    ecpool:with_client(?POOL, fun(C) -> mysql:query(C, Query, Params) end).
+init([]) ->
 
-query(Query, Params, Timeout) ->
-    ecpool:with_client(?POOL, fun(C) -> mysql:query(C, Query, Params, Timeout) end).
+    {ok, Env} = application:get_env(?APP, mysql_pool),
+
+    PoolSpec = ecpool:pool_spec(?APP, ?APP, ?APP, Env),
+
+    {ok, { {one_for_all, 10, 100}, [PoolSpec]} }.
 

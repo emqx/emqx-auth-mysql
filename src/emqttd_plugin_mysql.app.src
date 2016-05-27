@@ -2,8 +2,9 @@
  [
   {description, "emqttd Authentication/ACL with MySQL"},
   {vsn, "1.1"},
+  {modules, []},
   {registered, []},
   {applications, [kernel, stdlib, mysql, ecpool]},
-  {mod, {emqttd_plugin_mysql, []}},
+  {mod, {emqttd_plugin_mysql_app, []}},
   {env, []}
  ]}.

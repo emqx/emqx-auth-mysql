@@ -1,4 +1,11 @@
 
+1.1 (2016-05-26)
+----------------
+
+Use parameter query to avoid SQL injection
+
+Support superuser query
+
 1.0 (2016-04-12)
 ----------------
 
