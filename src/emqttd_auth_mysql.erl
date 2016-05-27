@@ -35,7 +35,7 @@ check(#mqtt_client{username = Username}, Password, _State)
     {error, undefined};
 
 check(Client, Password, #state{super_query = SuperQuery,
-                               auth_sql    = {AuthSql, AuthParams},
+                               auth_query  = {AuthSql, AuthParams},
                                hash_type   = HashType}) ->
     case emqttd_plugin_mysql:is_superuser(SuperQuery, Client) of
         false -> case emqttd_plugin_mysql:query(AuthSql, AuthParams, Client) of
