@@ -33,7 +33,7 @@ init({SuperQuery, AuthQuery, HashType}) ->
 check(#mqtt_client{username = Username}, _Password, _State) when ?EMPTY(Username) ->
     {error, username_undefined};
 
-check(_Client, Password, _State) when ?EMPTY(Password) ->
+check(Client, Password, #state{super_query = SuperQuery}) when ?EMPTY(Password) ->
     case emqttd_plugin_mysql:is_superuser(SuperQuery, Client) of
         true  -> ok;
         false -> {error, password_undefined}
