@@ -26,7 +26,6 @@ git submodule add https://github.com/emqtt/emqttd_plugin_mysql.git plugins/emqtt
 make && make dist
 ```
 
-
 Configure Plugin
 ----------------
 
@@ -40,7 +39,6 @@ File: etc/plugin.config
     {mysql_pool, [
         %% ecpool options
         {pool_size, 4},
-        {pool_type, round_robin},
         {auto_reconnect, 3},
 
         %% mysql options
@@ -86,7 +84,6 @@ Import mqtt.sql
 
 Import mqtt.sql to your database.
 
-
 Load Plugin
 -----------
 
@@ -94,9 +91,8 @@ Load Plugin
 ./bin/emqttd_ctl plugins load emqttd_plugin_mysql
 ```
 
-
-Auth Table(Demo)
------------------
+Auth Table
+----------
 
 Notice: This is a demo table. You could authenticate with any user table.
 
@@ -112,7 +108,6 @@ CREATE TABLE `mqtt_user` (
   UNIQUE KEY `mqtt_username` (`username`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 ```
-
 
 ACL Table
 ----------
@@ -136,4 +131,9 @@ Support
 Fork this project and implement your own authentication/ACL mechanism.
 
 Contact feng@emqtt.io if any issues.
+
+License
+-------
+
+Apache License Version 2.0
 
