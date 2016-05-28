@@ -42,7 +42,10 @@ is_superuser({SuperSql, Params}, Client) ->
             false
     end.
 
-%% @doc Parse SQL to Parameter Query. Avoid SQL Injection.
+%%--------------------------------------------------------------------
+%% Avoid SQL Injection: Parse SQL to Parameter Query.
+%%--------------------------------------------------------------------
+
 parse_query(undefined) ->
     undefined;
 parse_query(Sql) ->
