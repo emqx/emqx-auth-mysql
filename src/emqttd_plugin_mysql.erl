@@ -69,11 +69,11 @@ replvar(Params, Client) ->
 
 replvar([], Client, Acc) ->
     lists:reverse(Acc);
-replvar(["%u" | Params], Client = #mqtt_client{username = Username}, Acc) ->
+replvar(["'%u'" | Params], Client = #mqtt_client{username = Username}, Acc) ->
     replvar(Params, Client, [Username | Acc]);
-replvar(["%c" | Params], Client = #mqtt_client{client_id = ClientId}, Acc) ->
+replvar(["'%c'" | Params], Client = #mqtt_client{client_id = ClientId}, Acc) ->
     replvar(Params, Client, [ClientId | Acc]);
-replvar(["%a" | Params], Client = #mqtt_client{peername = {IpAddr, _}}, Acc) ->
+replvar(["'%a'" | Params], Client = #mqtt_client{peername = {IpAddr, _}}, Acc) ->
     replvar(Params, Client, [inet_parse:ntoa(IpAddr) | Acc]);
 replvar([Param | Params], Client, Acc) ->
     replvar(Params, Client, [Param | Acc]).
