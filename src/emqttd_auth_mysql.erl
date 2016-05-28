@@ -28,6 +28,8 @@
 -define(EMPTY(Username), (Username =:= undefined orelse Username =:= <<>>)).
 
 init({SuperQuery, AuthQuery, HashType}) ->
+    io:format("SuperQuery: ~p~n", [SuperQuery]),
+    io:format("AuthQuery: ~p~n", [AuthQuery]),
     {ok, #state{super_query = SuperQuery, auth_query = AuthQuery, hash_type = HashType}}.
 
 check(#mqtt_client{username = Username}, _Password, _State) when ?EMPTY(Username) ->

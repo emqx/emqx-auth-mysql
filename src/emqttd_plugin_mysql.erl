@@ -21,7 +21,7 @@
 
 -include("../../../include/emqttd.hrl").
 
--export([is_superuser/2, connect/1, query/3]).
+-export([is_superuser/2, parse_query/1, connect/1, query/3]).
 
 %%--------------------------------------------------------------------
 %% Is Superuser?
@@ -40,6 +40,18 @@ is_superuser({SuperSql, Params}, Client) ->
             false;
         {error, _Error} ->
             false
+    end.
+
+%% @doc Parse SQL to Parameter Query. Avoid SQL Injection.
+parse_query(undefined) ->
+    undefined;
+parse_query(Sql) ->
+    case re:run(Sql, "'%[uca]'", [global, {capture, all, list}]) of
+        {match, Variables} ->
+            Params = [Var || [Var] <- Variables],
+            {re:replace(Sql, "'%[uca]'", "?", [global, {return, list}]), Params};
+        nomatch ->
+            {Sql, []}
     end.
 
 %%--------------------------------------------------------------------

@@ -18,32 +18,34 @@
 
 -behaviour(application).
 
+-import(emqttd_plugin_mysql, [parse_query/1]).
+
 %% Application callbacks
 -export([start/2, prep_stop/1, stop/1]).
 
 -define(APP, emqttd_plugin_mysql).
 
 %%--------------------------------------------------------------------
-%% Application callbacks
+%% Application Callbacks
 %%--------------------------------------------------------------------
 
 start(_StartType, _StartArgs) ->
     {ok, Sup} = emqttd_plugin_mysql_sup:start_link(),
-    SuperQuery = application:get_env(?APP, superquery, undefined),
+    SuperQuery = parse_query(application:get_env(?APP, superquery, undefined)),
     ok = register_auth_mod(SuperQuery), ok = register_acl_mod(SuperQuery),
     {ok, Sup}.
 
 register_auth_mod(SuperQuery) ->
     {ok, AuthQuery} = application:get_env(?APP, authquery),
     {ok, HashType}  = application:get_env(?APP, password_hash),
-    AuthEnv = {SuperQuery, AuthQuery, HashType},
+    AuthEnv = {SuperQuery, parse_query(AuthQuery), HashType},
     emqttd_access_control:register_mod(auth, emqttd_auth_mysql, AuthEnv).
 
 register_acl_mod(SuperQuery) ->
     with_acl_enabled(fun(AclQuery) ->
-        SuperQuery       = application:get_env(?APP, superquery, undefined),
         {ok, AclNomatch} = application:get_env(?APP, acl_nomatch),
-        emqttd_access_control:register_mod(acl, emqttd_acl_mysql, {SuperQuery, AclQuery, AclNomatch})
+        AclEnv = {SuperQuery, parse_query(AclQuery), AclNomatch},
+        emqttd_access_control:register_mod(acl, emqttd_acl_mysql, AclEnv)
     end).
 
 prep_stop(State) ->
