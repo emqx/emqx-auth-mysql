@@ -59,7 +59,7 @@ stop(_State) ->
     ok.
 
 with_acl_enabled(Fun) ->
-    case application:get_env(?MODULE, aclquery) of
+    case application:get_env(?APP, aclquery) of
         {ok, AclQuery} -> Fun(AclQuery);
         undefined      -> ok
     end.
