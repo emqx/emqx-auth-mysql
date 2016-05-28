@@ -14,23 +14,23 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(emqttd_plugin_mysql_app).
+-module(emqttd_auth_mysql_app).
 
 -behaviour(application).
 
--import(emqttd_plugin_mysql, [parse_query/1]).
+-import(emqttd_auth_mysql_client, [parse_query/1]).
 
 %% Application callbacks
 -export([start/2, prep_stop/1, stop/1]).
 
--define(APP, emqttd_plugin_mysql).
+-define(APP, emqttd_auth_mysql).
 
 %%--------------------------------------------------------------------
 %% Application Callbacks
 %%--------------------------------------------------------------------
 
 start(_StartType, _StartArgs) ->
-    {ok, Sup} = emqttd_plugin_mysql_sup:start_link(),
+    {ok, Sup} = emqttd_auth_mysql_sup:start_link(),
     SuperQuery = parse_query(application:get_env(?APP, superquery, undefined)),
     ok = register_auth_mod(SuperQuery), ok = register_acl_mod(SuperQuery),
     {ok, Sup}.

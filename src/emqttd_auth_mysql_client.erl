@@ -14,8 +14,8 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc Authentication/ACL with MySQL Database.
--module(emqttd_plugin_mysql).
+%% @doc MySQL Authentication/ACL Client
+-module(emqttd_auth_mysql_client).
 
 -behaviour(ecpool_worker).
 

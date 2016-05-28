@@ -14,7 +14,7 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(emqttd_plugin_mysql_sup).
+-module(emqttd_auth_mysql_sup).
 
 -behaviour(supervisor).
 
@@ -23,7 +23,7 @@
 %% Supervisor callbacks
 -export([init/1]).
 
--define(APP, emqttd_plugin_mysql).
+-define(APP, emqttd_auth_mysql).
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).

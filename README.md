@@ -1,99 +1,77 @@
 
-emqttd_plugin_mysql
-===================
+emqttd_auth_mysql
+=================
 
-emqttd Authentication, ACL with MySQL Database
+Overview
+--------
+
+emqttd Authentication, ACL against MySQL Database
 
 Notice: changed mysql driver to [mysql-otp](https://github.com/mysql-otp/mysql-otp).
 
-
 Build Plugin
-------------
+-------------
 
-This project is a plugin for emqttd broker. In emqttd project:
-
-If the submodule exists:
-
-```
-git submodule update --remote
-```
-
-Orelse:
-
-```
-git submodule add https://github.com/emqtt/emqttd_plugin_mysql.git plugins/emqttd_plugin_mysql
-
-make && make dist
-```
-
+make && make ct
 
 Configure Plugin
 ----------------
 
-File: etc/plugin.config
+File: etc/emqttd_auth_mysql.config
 
-```erlang
-[
+```
+{mysql_pool, [
+    %% ecpool options
+    {pool_size, 4},
+    {pool_type, round_robin},
+    {auto_reconnect, 3},
 
-{emqttd_plugin_mysql, [
+    %% mysql options
+    {host,     "localhost"},
+    {port,     3306},
+    {user,     ""},
+    {password, ""},
+    {database, "mqtt"},
+    {encoding, utf8}
+]}.
 
-    {mysql_pool, [
-        %% ecpool options
-        {pool_size, 4},
-        {pool_type, round_robin},
-        {auto_reconnect, 3},
+%% Variables: %u = username, %c = clientid, %a = ipaddress
 
-        %% mysql options
-        {host,     "localhost"},
-        {port,     3306},
-        {user,     ""},
-        {password, ""},
-        {database, "mqtt"},
-        {encoding, utf8}
-    ]},
+%% Superuser Query
+{superquery, "select is_superuser from mqtt_user where username = '%u' limit 1"},
 
-    %% Variables: %u = username, %c = clientid, %a = ipaddress
+%% Authentication Query: select password only
+{authquery, "select password from mqtt_user where username = '%u' limit 1"},
 
-    %% Superuser Query
-    {superquery, "select is_superuser from mqtt_user where username = '%u' limit 1"},
+%% hash algorithm: md5, sha, sha256, pbkdf2?
+{password_hash, sha256},
 
-    %% Authentication Query: select password only
-    {authquery, "select password from mqtt_user where username = '%u' limit 1"},
+%% select password with salt
+%% {authquery, "select password, salt from mqtt_user where username = '%u'"},
 
-    %% hash algorithm: md5, sha, sha256, pbkdf2?
-    {password_hash, sha256},
+%% sha256 with salt prefix
+%% {password_hash, {salt, sha256}},
 
-    %% select password with salt
-    %% {authquery, "select password, salt from mqtt_user where username = '%u'"},
+%% sha256 with salt suffix
+%% {password_hash, {sha256, salt}},
 
-    %% sha256 with salt prefix
-    %% {password_hash, {salt, sha256}},
+%% comment this query, the acl will be disabled
+{aclquery, "select * from mqtt_acl where ipaddr = '%a' or username = '%u' or username = '$all' or clientid = '%c'"},
 
-    %% sha256 with salt suffix
-    %% {password_hash, {sha256, salt}},
+%% If no rules matched, return...
+{acl_nomatch, allow}
 
-    %% comment this query, the acl will be disabled
-    {aclquery, "select * from mqtt_acl where ipaddr = '%a' or username = '%u' or username = '$all' or clientid = '%c'"},
-
-    %% If no rules matched, return...
-    {acl_nomatch, allow}
-]}
-].
 ```
 
 Import mqtt.sql
 ---------------
 
-Import mqtt.sql to your database.
-
+Import mqtt.sql into your database.
 
 Load Plugin
 -----------
 
-```
 ./bin/emqttd_ctl plugins load emqttd_plugin_mysql
-```
-
 
 Auth Table(Demo)
 -----------------
