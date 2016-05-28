@@ -50,7 +50,7 @@ check(Client, Password, #state{super_query = SuperQuery,
                         check_pass(PassHash, Password, HashType);
                     {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
                         check_pass(PassHash, Salt, Password, HashType);
-                    {ok, []} ->
+                    {ok, _Columns, []} ->
                         {error, notfound};
                     {error, Error} ->
                         {error, Error}

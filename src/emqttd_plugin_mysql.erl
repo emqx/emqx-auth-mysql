@@ -36,7 +36,7 @@ is_superuser({SuperSql, Params}, Client) ->
             true;
         {ok, [_Super], [[_False]]} ->
             false;
-        {ok, []} ->
+        {ok, [_Super], []} ->
             false;
         {error, _Error} ->
             false
