@@ -2,10 +2,7 @@
 emqttd_auth_mysql
 =================
 
-Overview
---------
-
-emqttd Authentication, ACL against MySQL Database
+Authentication, ACL with MySQL Database
 
 Notice: changed mysql driver to [mysql-otp](https://github.com/mysql-otp/mysql-otp).
 
@@ -114,4 +111,9 @@ Support
 Fork this project and implement your own authentication/ACL mechanism.
 
 Contact feng@emqtt.io if any issues.
+
+License
+-------
+
+Apache License Version 2.0
 
