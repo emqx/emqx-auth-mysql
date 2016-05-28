@@ -52,7 +52,12 @@ File: etc/plugin.config
         {encoding, utf8}
     ]},
 
-    %% select password only
+    %% Variables: %u = username, %c = clientid, %a = ipaddress
+
+    %% Superuser Query
+    {superquery, "select is_superuser from mqtt_user where username = '%u' limit 1"},
+
+    %% Authentication Query: select password only
     {authquery, "select password from mqtt_user where username = '%u' limit 1"},
 
     %% hash algorithm: md5, sha, sha256, pbkdf2?
@@ -101,6 +106,7 @@ CREATE TABLE `mqtt_user` (
   `username` varchar(100) DEFAULT NULL,
   `password` varchar(100) DEFAULT NULL,
   `salt` varchar(20) DEFAULT NULL,
+  `is_superuser` tinyint(1) DEFAULT 0,
   `created` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `mqtt_username` (`username`)
