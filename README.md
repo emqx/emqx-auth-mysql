@@ -71,7 +71,7 @@ Import mqtt.sql into your database.
 Load Plugin
 -----------
 
-./bin/emqttd_ctl plugins load emqttd_plugin_mysql
+./bin/emqttd_ctl plugins load emqttd_auth_mysql
 
 Auth Table(Demo)
 -----------------
