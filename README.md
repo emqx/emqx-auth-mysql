@@ -1,12 +1,14 @@
 
-## Overview
+emqttd_plugin_mysql
+===================
 
 emqttd Authentication, ACL with MySQL Database
 
 Notice: changed mysql driver to [mysql-otp](https://github.com/mysql-otp/mysql-otp).
 
 
-## Build Plugin
+Build Plugin
+------------
 
 This project is a plugin for emqttd broker. In emqttd project:
 
@@ -24,8 +26,8 @@ git submodule add https://github.com/emqtt/emqttd_plugin_mysql.git plugins/emqtt
 make && make dist
 ```
 
-
-## Configure Plugin
+Configure Plugin
+----------------
 
 File: etc/plugin.config
 
@@ -37,7 +39,6 @@ File: etc/plugin.config
     {mysql_pool, [
         %% ecpool options
         {pool_size, 4},
-        {pool_type, round_robin},
         {auto_reconnect, 3},
 
         %% mysql options
@@ -49,7 +50,12 @@ File: etc/plugin.config
         {encoding, utf8}
     ]},
 
-    %% select password only
+    %% Variables: %u = username, %c = clientid, %a = ipaddress
+
+    %% Superuser Query
+    {superquery, "select is_superuser from mqtt_user where username = '%u' limit 1"},
+
+    %% Authentication Query: select password only
     {authquery, "select password from mqtt_user where username = '%u' limit 1"},
 
     %% hash algorithm: md5, sha, sha256, pbkdf2?
@@ -73,19 +79,20 @@ File: etc/plugin.config
 ].
 ```
 
-## Import mqtt.sql
+Import mqtt.sql
+---------------
 
 Import mqtt.sql to your database.
 
-
-## Load Plugin
+Load Plugin
+-----------
 
 ```
 ./bin/emqttd_ctl plugins load emqttd_plugin_mysql
 ```
 
-
-## Auth Table(Demo)
+Auth Table
+----------
 
 Notice: This is a demo table. You could authenticate with any user table.
 
@@ -95,14 +102,15 @@ CREATE TABLE `mqtt_user` (
   `username` varchar(100) DEFAULT NULL,
   `password` varchar(100) DEFAULT NULL,
   `salt` varchar(20) DEFAULT NULL,
+  `is_superuser` tinyint(1) DEFAULT 0,
   `created` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `mqtt_username` (`username`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 ```
 
-
-## ACL Table
+ACL Table
+----------
 
 ```sql
 CREATE TABLE `mqtt_acl` (
@@ -117,9 +125,15 @@ CREATE TABLE `mqtt_acl` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ```
 
-## Support
+Support
+-------
 
 Fork this project and implement your own authentication/ACL mechanism.
 
 Contact feng@emqtt.io if any issues.
+
+License
+-------
+
+Apache License Version 2.0
 

@@ -14,58 +14,70 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc MySQL Authentication/ACL Application
+%% @doc Authentication/ACL with MySQL Database.
 -module(emqttd_plugin_mysql).
 
--behaviour(application).
+-behaviour(ecpool_worker).
 
-%% Application callbacks
--export([start/2, prep_stop/1, stop/1]).
+-include("../../../include/emqttd.hrl").
 
--behaviour(supervisor).
-
-%% Supervisor callbacks
--export([init/1]).
+-export([is_superuser/2, parse_query/1, connect/1, query/3]).
 
 %%--------------------------------------------------------------------
-%% Application callbacks
+%% Is Superuser?
 %%--------------------------------------------------------------------
 
-start(_StartType, _StartArgs) ->
-    {ok, AuthSql}  = application:get_env(?MODULE, authquery),
-    {ok, HashType} = application:get_env(?MODULE, password_hash),
-    ok = emqttd_access_control:register_mod(auth, emqttd_auth_mysql, {AuthSql, HashType}),
-    with_acl_enabled(fun(AclSql) ->
-        {ok, AclNomatch} = application:get_env(?MODULE, acl_nomatch),
-        ok = emqttd_access_control:register_mod(acl, emqttd_acl_mysql, {AclSql, AclNomatch})
-    end),
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
-
-prep_stop(State) ->
-    emqttd_access_control:unregister_mod(auth, emqttd_auth_mysql),
-    with_acl_enabled(fun(_AclSql) ->
-        emqttd_access_control:unregister_mod(acl, emqttd_acl_mysql)
-    end),
-    State.
-
-stop(_State) ->
-    ok.
-
-%%--------------------------------------------------------------------
-%% Supervisor callbacks(Dummy)
-%%--------------------------------------------------------------------
-
-init([]) ->
-
-    {ok, Env} = application:get_env(emqttd_plugin_mysql, mysql_pool),
-
-    Pool = ecpool:pool_spec(mysql_pool, mysql_pool, emqttd_mysql_pool, Env),
-
-    {ok, { {one_for_all, 5, 100}, [Pool]} }.
-
-with_acl_enabled(Fun) ->
-    case application:get_env(?MODULE, aclquery) of
-        {ok, AclSql} -> Fun(AclSql);
-        undefined    -> ok
+-spec(is_superuser(undefined | {string(), list()}, mqtt_client()) -> boolean()).
+is_superuser(undefined, _Client) ->
+    false;
+is_superuser({SuperSql, Params}, Client) ->
+    case query(SuperSql, Params, Client) of
+        {ok, [_Super], [[1]]} ->
+            true;
+        {ok, [_Super], [[_False]]} ->
+            false;
+        {ok, [_Super], []} ->
+            false;
+        {error, _Error} ->
+            false
     end.
+
+%%--------------------------------------------------------------------
+%% Avoid SQL Injection: Parse SQL to Parameter Query.
+%%--------------------------------------------------------------------
+
+parse_query(undefined) ->
+    undefined;
+parse_query(Sql) ->
+    case re:run(Sql, "'%[uca]'", [global, {capture, all, list}]) of
+        {match, Variables} ->
+            Params = [Var || [Var] <- Variables],
+            {re:replace(Sql, "'%[uca]'", "?", [global, {return, list}]), Params};
+        nomatch ->
+            {Sql, []}
+    end.
+
+%%--------------------------------------------------------------------
+%% MySQL Connect/Query
+%%--------------------------------------------------------------------
+
+connect(Options) ->
+    mysql:start_link(Options).
+
+query(Sql, Params, Client) ->
+    ecpool:with_client(?MODULE, fun(C) -> mysql:query(C, Sql, replvar(Params, Client)) end).
+
+replvar(Params, Client) ->
+    replvar(Params, Client, []).
+
+replvar([], Client, Acc) ->
+    lists:reverse(Acc);
+replvar(["'%u'" | Params], Client = #mqtt_client{username = Username}, Acc) ->
+    replvar(Params, Client, [Username | Acc]);
+replvar(["'%c'" | Params], Client = #mqtt_client{client_id = ClientId}, Acc) ->
+    replvar(Params, Client, [ClientId | Acc]);
+replvar(["'%a'" | Params], Client = #mqtt_client{peername = {IpAddr, _}}, Acc) ->
+    replvar(Params, Client, [inet_parse:ntoa(IpAddr) | Acc]);
+replvar([Param | Params], Client, Acc) ->
+    replvar(Params, Client, [Param | Acc]).
 
