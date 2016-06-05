@@ -19,7 +19,7 @@
 
 -behaviour(ecpool_worker).
 
--include("../../../include/emqttd.hrl").
+-include_lib("emqttd/include/emqttd.hrl").
 
 -export([is_superuser/2, parse_query/1, connect/1, query/3]).
 
