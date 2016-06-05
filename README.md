@@ -20,7 +20,6 @@ File: etc/emqttd_auth_mysql.config
 {mysql_pool, [
     %% ecpool options
     {pool_size, 4},
-    {pool_type, round_robin},
     {auto_reconnect, 3},
 
     %% mysql options
@@ -70,8 +69,8 @@ Load Plugin
 
 ./bin/emqttd_ctl plugins load emqttd_auth_mysql
 
-Auth Table(Demo)
------------------
+Auth Table
+----------
 
 Notice: This is a demo table. You could authenticate with any user table.
 
@@ -87,7 +86,6 @@ CREATE TABLE `mqtt_user` (
   UNIQUE KEY `mqtt_username` (`username`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 ```
-
 
 ACL Table
 ----------
@@ -105,15 +103,13 @@ CREATE TABLE `mqtt_acl` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ```
 
-Support
--------
-
-Fork this project and implement your own authentication/ACL mechanism.
-
-Contact feng@emqtt.io if any issues.
-
 License
 -------
 
 Apache License Version 2.0
+
+Author
+-------
+
+Feng Lee <feng@emqtt.io>.
 
