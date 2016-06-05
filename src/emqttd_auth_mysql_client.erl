@@ -70,7 +70,7 @@ query(Sql, Params, Client) ->
 replvar(Params, Client) ->
     replvar(Params, Client, []).
 
-replvar([], Client, Acc) ->
+replvar([], _Client, Acc) ->
     lists:reverse(Acc);
 replvar(["'%u'" | Params], Client = #mqtt_client{username = Username}, Acc) ->
     replvar(Params, Client, [Username | Acc]);

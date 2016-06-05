@@ -21,7 +21,7 @@
 
 -include_lib("emqttd/include/emqttd.hrl").
 
--import(emqttd_auth_mysql_client, [is_superuser/1, query/3]).
+-import(emqttd_auth_mysql_client, [is_superuser/2, query/3]).
 
 -export([init/1, check/3, description/0]).
 
