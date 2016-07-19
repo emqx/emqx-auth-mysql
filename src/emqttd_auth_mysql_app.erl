@@ -30,20 +30,21 @@
 %%--------------------------------------------------------------------
 
 start(_StartType, _StartArgs) ->
+    gen_conf:init(?APP),
     {ok, Sup} = emqttd_auth_mysql_sup:start_link(),
-    SuperQuery = parse_query(application:get_env(?APP, superquery, undefined)),
+    SuperQuery = parse_query(gen_conf:value((?APP, superquery)),
     ok = register_auth_mod(SuperQuery), ok = register_acl_mod(SuperQuery),
     {ok, Sup}.
 
 register_auth_mod(SuperQuery) ->
-    {ok, AuthQuery} = application:get_env(?APP, authquery),
-    {ok, HashType}  = application:get_env(?APP, password_hash),
+    {ok, AuthQuery} = gen_conf:value(?APP, authquery),
+    {ok, HashType}  = gen_conf:value(?APP, password_hash),
     AuthEnv = {SuperQuery, parse_query(AuthQuery), HashType},
     emqttd_access_control:register_mod(auth, emqttd_auth_mysql, AuthEnv).
 
 register_acl_mod(SuperQuery) ->
     with_acl_enabled(fun(AclQuery) ->
-        {ok, AclNomatch} = application:get_env(?APP, acl_nomatch),
+        {ok, AclNomatch} = gen_conf:value(?APP, acl_nomatch),
         AclEnv = {SuperQuery, parse_query(AclQuery), AclNomatch},
         emqttd_access_control:register_mod(acl, emqttd_acl_mysql, AclEnv)
     end).
@@ -59,7 +60,7 @@ stop(_State) ->
     ok.
 
 with_acl_enabled(Fun) ->
-    case application:get_env(?APP, aclquery) of
+    case gen_conf:value(?APP, aclquery) of
         {ok, AclQuery} -> Fun(AclQuery);
         undefined      -> ok
     end.

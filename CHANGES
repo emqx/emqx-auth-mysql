@@ -1,4 +1,18 @@
 
+2.0 (2016-07-30)
+----------------
+
+gen_conf
+
+1.1.2 (2016-06-30)
+------------------
+
+Upgrade mysql-otp driver to 1.2.0
+
+MySQL connection appears to be closed (#15)
+
+emqttd_plugin_mysql, bad_return (#13)
+
 1.1 (2016-05-26)
 ----------------
 

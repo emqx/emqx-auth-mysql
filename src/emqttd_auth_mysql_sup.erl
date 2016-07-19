@@ -34,7 +34,7 @@ start_link() ->
 
 init([]) ->
 
-    {ok, Env} = application:get_env(?APP, mysql_pool),
+    {ok, Env} = gen_conf:value(?APP, mysql_pool),
 
     PoolSpec = ecpool:pool_spec(?APP, ?APP, ?APP, Env),
 
