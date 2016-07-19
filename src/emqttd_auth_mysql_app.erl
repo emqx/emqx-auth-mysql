@@ -32,7 +32,7 @@
 start(_StartType, _StartArgs) ->
     gen_conf:init(?APP),
     {ok, Sup} = emqttd_auth_mysql_sup:start_link(),
-    SuperQuery = parse_query(gen_conf:value((?APP, superquery)),
+    SuperQuery = parse_query(gen_conf:value(?APP, superquery)),
     ok = register_auth_mod(SuperQuery), ok = register_acl_mod(SuperQuery),
     {ok, Sup}.
 
