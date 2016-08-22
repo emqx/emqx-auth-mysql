@@ -18,12 +18,12 @@
 
 -behaviour(application).
 
+-include("emqttd_auth_mysql.hrl").
+
 -import(emqttd_auth_mysql_client, [parse_query/1]).
 
 %% Application callbacks
 -export([start/2, prep_stop/1, stop/1]).
-
--define(APP, emqttd_auth_mysql).
 
 %%--------------------------------------------------------------------
 %% Application Callbacks
@@ -31,7 +31,8 @@
 
 start(_StartType, _StartArgs) ->
     gen_conf:init(?APP),
-    {ok, Sup} = emqttd_auth_mysql_sup:start_link(),
+    Pools = gen_conf:list(?APP, mysql),
+    {ok, Sup} = emqttd_auth_mysql_sup:start_link(Pools),
     SuperQuery = parse_query(gen_conf:value(?APP, superquery)),
     ok = register_auth_mod(SuperQuery), ok = register_acl_mod(SuperQuery),
     {ok, Sup}.
