@@ -17,3 +17,5 @@ ct.coverdata
 logs/
 test/ct.cover.spec
 test/*.beam
+cover/
+eunit.coverdata

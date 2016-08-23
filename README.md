@@ -9,12 +9,12 @@ Notice: changed mysql driver to [mysql-otp](https://github.com/mysql-otp/mysql-o
 Build Plugin
 -------------
 
-make && make ct
+make && make tests
 
 Configure Plugin
 ----------------
 
-File: etc/emqttd_auth_mysql.config
+File: etc/emqttd_auth_mysql.conf
 
 ```
 {mysql_pool, [

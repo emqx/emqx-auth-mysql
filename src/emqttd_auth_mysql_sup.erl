@@ -16,9 +16,9 @@
 
 -module(emqttd_auth_mysql_sup).
 
--behaviour(supervisor).
-
 -include("emqttd_auth_mysql.hrl").
+
+-behaviour(supervisor).
 
 -export([start_link/0]).
 
