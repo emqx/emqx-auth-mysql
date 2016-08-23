@@ -14,27 +14,19 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc Authentication with MySQL Database.
 -module(emqttd_auth_mysql).
 
 -behaviour(emqttd_auth_mod).
 
--include("emqttd_auth_mysql.hrl").
-
 -include_lib("emqttd/include/emqttd.hrl").
 
 -import(emqttd_auth_mysql_client, [is_superuser/2, query/3]).
-
--export([pool_name/1]).
 
 -export([init/1, check/3, description/0]).
 
 -record(state, {super_query, auth_query, hash_type}).
 
 -define(EMPTY(Username), (Username =:= undefined orelse Username =:= <<>>)).
-
-pool_name(Pool) ->
-    list_to_atom(lists:concat([?APP, '_', Pool])).
 
 init({SuperQuery, AuthQuery, HashType}) ->
     {ok, #state{super_query = SuperQuery, auth_query = AuthQuery, hash_type = HashType}}.

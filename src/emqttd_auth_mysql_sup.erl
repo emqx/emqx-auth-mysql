@@ -20,22 +20,20 @@
 
 -include("emqttd_auth_mysql.hrl").
 
--export([start_link/1]).
+-export([start_link/0]).
 
 %% Supervisor callbacks
 -export([init/1]).
 
-start_link(Pools) ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, [Pools]).
+start_link() ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %%--------------------------------------------------------------------
 %% Supervisor callbacks
 %%--------------------------------------------------------------------
 
-init([Pools]) ->
-    %% MySQL Connection Pool...
-    {ok, {{one_for_one, 10, 100}, [pool_spec(Pool, Env) || {mysql, Pool, Env} <- Pools]}}.
-
-pool_spec(Pool, Env) ->
-    ecpool:pool_spec({?APP, Pool}, ?APP:pool_name(Pool), ?APP, Env).
+init([]) ->
+    %% MySQL Connection Pool.
+    {ok, PoolEnv} = gen_conf:value(?APP, mysql_pool),
+    {ok, {{one_for_one, 10, 100}, [ecpool:pool_spec(?APP, ?APP, ?APP, PoolEnv)]}}.
 

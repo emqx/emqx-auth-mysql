@@ -19,6 +19,8 @@
 
 -behaviour(ecpool_worker).
 
+-include("emqttd_auth_mysql.hrl").
+
 -include_lib("emqttd/include/emqttd.hrl").
 
 -export([is_superuser/2, parse_query/1, connect/1, query/3]).
@@ -65,7 +67,7 @@ connect(Options) ->
     mysql:start_link(Options).
 
 query(Sql, Params, Client) ->
-    ecpool:with_client(?MODULE, fun(C) -> mysql:query(C, Sql, replvar(Params, Client)) end).
+    ecpool:with_client(?APP, fun(C) -> mysql:query(C, Sql, replvar(Params, Client)) end).
 
 replvar(Params, Client) ->
     replvar(Params, Client, []).
