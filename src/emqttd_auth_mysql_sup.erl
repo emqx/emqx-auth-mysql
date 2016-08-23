@@ -35,5 +35,6 @@ start_link() ->
 init([]) ->
     %% MySQL Connection Pool.
     {ok, PoolEnv} = gen_conf:value(?APP, mysql_pool),
-    {ok, {{one_for_one, 10, 100}, [ecpool:pool_spec(?APP, ?APP, ?APP, PoolEnv)]}}.
+    PoolSpec = ecpool:pool_spec(?APP, ?APP, emqttd_auth_mysql_client, PoolEnv),
+    {ok, {{one_for_one, 10, 100}, [PoolSpec]}}.
 

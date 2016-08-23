@@ -18,7 +18,7 @@ File: etc/emqttd_auth_mysql.config
 
 ```
 {mysql_pool, [
-    %% ecpool options
+    %% pool options
     {pool_size, 4},
     {auto_reconnect, 3},
 
