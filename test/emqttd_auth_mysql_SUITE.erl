@@ -29,12 +29,30 @@
 	                        "(6,1,'127.0.0.1',NULL,NULL,2,'#'),"
 	                        "(7,1,NULL,'dashboard',NULL,1,'$SYS/#')">>).
 
+-define(DROP_AUTH_TABLE, <<"DROP TABLE IF EXISTS `mqtt_user`">>).
+
+-define(CREATE_AUTH_TABLE, <<"CREATE TABLE `mqtt_user` ("
+                             "`id` int(11) unsigned NOT NULL AUTO_INCREMENT,"
+                             "`username` varchar(100) DEFAULT NULL,"
+                             "`password` varchar(100) DEFAULT NULL,"
+                             "`salt` varchar(20) DEFAULT NULL,"
+                             "`is_superuser` tinyint(1) DEFAULT 0,"
+                             "`created` datetime DEFAULT NULL,"
+                             "PRIMARY KEY (`id`),"
+                             "UNIQUE KEY `mqtt_username` (`username`)"
+                             ") ENGINE=MyISAM DEFAULT CHARSET=utf8">>).
+
+-define(INIT_AUTH, <<"INSERT INTO mqtt_user (id, username, password, salt, is_superuser, created)"
+                     "VALUES  (1, 'testuser1', 'pass1', 'plain', 0, now())," 
+                             "(2, 'testuser2', 'pass2', 'plain', 1, now())">>).
+
 all() -> 
     [{group, emqttd_auth_mysql}].
 
 groups() -> 
     [{emqttd_auth_mysql, [sequence],
-     [check_acl]}].
+     [check_acl,
+      check_auth]}].
 
 init_per_suite(Config) ->
     DataDir = proplists:get_value(data_dir, Config),
@@ -72,3 +90,17 @@ init_acl_() ->
 drop_acl_() -> 
     {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
     ok = mysql:query(Pid, ?DROP_ACL_TABLE).
+
+check_auth(_) ->
+    init_auth_(), 
+    User1 = #mqtt_client{client_id = <<"client1">>, username = <<"testuser1">>},
+    ok = emqttd_access_control:auth(User1, <<"pass1">>),
+    {error, _} = emqttd_access_control:auth(User1, <<"pass">>).
+
+init_auth_() ->
+    {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
+    ok = mysql:query(Pid, ?DROP_AUTH_TABLE),
+    ok = mysql:query(Pid, ?CREATE_AUTH_TABLE),
+    ok = mysql:query(Pid, ?INIT_AUTH).
+
+
