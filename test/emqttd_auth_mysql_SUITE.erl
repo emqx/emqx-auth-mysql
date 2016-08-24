@@ -95,7 +95,8 @@ check_auth(_) ->
     init_auth_(), 
     User1 = #mqtt_client{client_id = <<"client1">>, username = <<"testuser1">>},
     ok = emqttd_access_control:auth(User1, <<"pass1">>),
-    {error, _} = emqttd_access_control:auth(User1, <<"pass">>).
+    {error, _} = emqttd_access_control:auth(User1, <<"pass">>),
+    drop_auth_().
 
 init_auth_() ->
     {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
@@ -103,4 +104,7 @@ init_auth_() ->
     ok = mysql:query(Pid, ?CREATE_AUTH_TABLE),
     ok = mysql:query(Pid, ?INIT_AUTH).
 
+drop_auth_() ->
+    {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
+    ok = mysql:query(Pid, ?DROP_AUTH_TABLE).
 
