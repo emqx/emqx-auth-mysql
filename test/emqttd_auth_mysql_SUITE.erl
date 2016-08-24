@@ -3,7 +3,72 @@
 
 -compile(export_all).
 
-all() -> [].
+-define(PID, emqttd_auth_mysql).
 
-groups() -> [].
+-include_lib("emqttd/include/emqttd.hrl").
 
+%%setp1 init table
+-define(DROP_ACL_TABLE, <<"DROP TABLE IF EXISTS mqtt_acl">>).
+
+-define(CREATE_ACL_TABLE, <<"CREATE TABLE mqtt_acl ("
+                            "   id int(11) unsigned NOT NULL AUTO_INCREMENT,"
+                            "   allow int(1) DEFAULT NULL COMMENT '0: deny, 1: allow',"
+                            "   ipaddr varchar(60) DEFAULT NULL COMMENT 'IpAddress',"
+                            "   username varchar(100) DEFAULT NULL COMMENT 'Username',"
+                            "   clientid varchar(100) DEFAULT NULL COMMENT 'ClientId',"
+                            "   access int(2) NOT NULL COMMENT '1: subscribe, 2: publish, 3: pubsub',"
+                            "   topic varchar(100) NOT NULL DEFAULT '' COMMENT 'Topic Filter',",
+                            "   PRIMARY KEY (`id`)"
+                            ") ENGINE=InnoDB DEFAULT CHARSET=utf8">>).
+
+-define(INIT_ACL, <<"INSERT INTO mqtt_acl (id, allow, ipaddr, username, clientid, access, topic)"
+                    "VALUES  (1,1,NULL,'$all',NULL,2,'#'),"
+	                        "(2,0,NULL,'$all',NULL,1,'$SYS/#'),"
+	                        "(3,0,NULL,'$all',NULL,1,'eq #'),"
+	                        "(5,1,'127.0.0.1',NULL,NULL,2,'$SYS/#'),"
+	                        "(6,1,'127.0.0.1',NULL,NULL,2,'#'),"
+	                        "(7,1,NULL,'dashboard',NULL,1,'$SYS/#')">>).
+
+all() -> 
+    [{group, emqttd_auth_mysql}].
+
+groups() -> 
+    [{emqttd_auth_mysql, [sequence],
+     [check_acl]}].
+
+init_per_suite(Config) ->
+    DataDir = proplists:get_value(data_dir, Config),
+    application:start(lager),
+    application:set_env(emqttd, conf, filename:join([DataDir, "emqttd.conf"])),
+    application:ensure_all_started(emqttd),
+    application:set_env(emqttd_auth_mysql, conf, filename:join([DataDir, "emqttd_auth_mysql.conf"])),
+    application:ensure_all_started(emqttd_auth_mysql),
+    Config.
+
+end_per_suite(_Config) ->
+    application:stop(emqttd_auth_mysql),
+    application:stop(ecpool),
+    application:stop(mysql),
+    application:stop(emqttd),
+    emqttd_mnesia:ensure_stopped().
+
+check_acl(_) ->
+    init_acl_(),
+    User1 = #mqtt_client{client_id = <<"client1">>, username = <<"testuser">>},
+    User2 = #mqtt_client{client_id = <<"client2">>, username = <<"xyz">>},
+    allow = emqttd_access_control:check_acl(User1, subscribe, <<"users/testuser/1">>),
+    allow = emqttd_access_control:check_acl(User2, subscribe, <<"a/b/c">>),
+    deny  = emqttd_access_control:check_acl(User1, subscribe, <<"$SYS/testuser/1">>),
+    deny  = emqttd_access_control:check_acl(User2, subscribe, <<"$SYS/testuser/1">>),
+    drop_acl_().
+
+
+init_acl_() ->
+    {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
+    ok = mysql:query(Pid, ?DROP_ACL_TABLE),
+    ok = mysql:query(Pid, ?CREATE_ACL_TABLE),
+    ok = mysql:query(Pid, ?INIT_ACL).
+
+drop_acl_() -> 
+    {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
+    ok = mysql:query(Pid, ?DROP_ACL_TABLE).
