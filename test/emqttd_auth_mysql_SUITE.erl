@@ -1,3 +1,18 @@
+%%--------------------------------------------------------------------
+%% Copyright (c) 2012-2016 Feng Lee <feng@emqtt.io>.
+%%
+%% Licensed under the Apache License, Version 2.0 (the "License");
+%% you may not use this file except in compliance with the License.
+%% You may obtain a copy of the License at
+%%
+%%     http://www.apache.org/licenses/LICENSE-2.0
+%%
+%% Unless required by applicable law or agreed to in writing, software
+%% distributed under the License is distributed on an "AS IS" BASIS,
+%% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+%% See the License for the specific language governing permissions and
+%% limitations under the License.
+%%--------------------------------------------------------------------
 
 -module(emqttd_auth_mysql_SUITE).
 
@@ -78,7 +93,7 @@ check_acl(_) ->
     allow = emqttd_access_control:check_acl(User2, subscribe, <<"a/b/c">>),
     deny  = emqttd_access_control:check_acl(User1, subscribe, <<"$SYS/testuser/1">>),
     deny  = emqttd_access_control:check_acl(User2, subscribe, <<"$SYS/testuser/1">>),
-    drop_acl_().
+    drop_table_(?DROP_ACL_TABLE).
 
 
 init_acl_() ->
@@ -87,16 +102,24 @@ init_acl_() ->
     ok = mysql:query(Pid, ?CREATE_ACL_TABLE),
     ok = mysql:query(Pid, ?INIT_ACL).
 
-drop_acl_() -> 
-    {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
-    ok = mysql:query(Pid, ?DROP_ACL_TABLE).
-
 check_auth(_) ->
     init_auth_(), 
     User1 = #mqtt_client{client_id = <<"client1">>, username = <<"testuser1">>},
+
+    User2 = #mqtt_client{client_id = <<"client2">>, username = <<"testuser2">>},
+    
+    User3 = #mqtt_client{client_id = <<"client3">>},
     ok = emqttd_access_control:auth(User1, <<"pass1">>),
     {error, _} = emqttd_access_control:auth(User1, <<"pass">>),
-    drop_auth_().
+    {error, password_undefined} = emqttd_access_control:auth(User1, <<>>),
+    
+    ok = emqttd_access_control:auth(User2, <<"pass2">>),
+    ok = emqttd_access_control:auth(User2, <<>>),
+    ok = emqttd_access_control:auth(User2, <<"errorpwd">>),
+    
+    
+    {error, _} = emqttd_access_control:auth(User3, <<"pwd">>),
+    drop_table_(?DROP_AUTH_TABLE).
 
 init_auth_() ->
     {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
@@ -104,7 +127,7 @@ init_auth_() ->
     ok = mysql:query(Pid, ?CREATE_AUTH_TABLE),
     ok = mysql:query(Pid, ?INIT_AUTH).
 
-drop_auth_() ->
+drop_table_(Tab) ->
     {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
-    ok = mysql:query(Pid, ?DROP_AUTH_TABLE).
+    ok = mysql:query(Pid, Tab).
 
