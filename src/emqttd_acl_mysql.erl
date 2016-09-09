@@ -19,7 +19,9 @@
 
 -behaviour(emqttd_acl_mod).
 
--include("../../../include/emqttd.hrl").
+-include_lib("emqttd/include/emqttd.hrl").
+
+-import(emqttd_auth_mysql_client, [is_superuser/2, query/3]).
 
 %% ACL Callbacks
 -export([init/1, check_acl/2, reload_acl/1, description/0]).
@@ -30,14 +32,14 @@ init({SuperQuery, AclQuery, AclNomatch}) ->
     {ok, #state{super_query = SuperQuery, acl_query = AclQuery, acl_nomatch = AclNomatch}}.
 
 check_acl({#mqtt_client{username = <<$$, _/binary>>}, _PubSub, _Topic}, _State) ->
-    {error, bad_username};
+    ignore; 
 
 check_acl({Client, PubSub, Topic}, #state{super_query = SuperQuery,
                                           acl_query   = {AclSql, AclParams},
                                           acl_nomatch = Default}) ->
 
-    case emqttd_plugin_mysql:is_superuser(SuperQuery, Client) of
-        false -> case emqttd_plugin_mysql:query(AclSql, AclParams, Client) of
+    case is_superuser(SuperQuery, Client) of
+        false -> case query(AclSql, AclParams, Client) of
                     {ok, _Columns, []} ->
                         Default;
                     {ok, _Columns, Rows} ->

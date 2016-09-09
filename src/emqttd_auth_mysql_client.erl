@@ -14,12 +14,14 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc Authentication/ACL with MySQL Database.
--module(emqttd_plugin_mysql).
+%% @doc MySQL Authentication/ACL Client
+-module(emqttd_auth_mysql_client).
 
 -behaviour(ecpool_worker).
 
--include("../../../include/emqttd.hrl").
+-include("emqttd_auth_mysql.hrl").
+
+-include_lib("emqttd/include/emqttd.hrl").
 
 -export([is_superuser/2, parse_query/1, connect/1, query/3]).
 
@@ -65,12 +67,12 @@ connect(Options) ->
     mysql:start_link(Options).
 
 query(Sql, Params, Client) ->
-    ecpool:with_client(?MODULE, fun(C) -> mysql:query(C, Sql, replvar(Params, Client)) end).
+    ecpool:with_client(?APP, fun(C) -> mysql:query(C, Sql, replvar(Params, Client)) end).
 
 replvar(Params, Client) ->
     replvar(Params, Client, []).
 
-replvar([], Client, Acc) ->
+replvar([], _Client, Acc) ->
     lists:reverse(Acc);
 replvar(["'%u'" | Params], Client = #mqtt_client{username = Username}, Acc) ->
     replvar(Params, Client, [Username | Acc]);

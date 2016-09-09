@@ -14,12 +14,13 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc Authentication with MySQL Database.
 -module(emqttd_auth_mysql).
 
 -behaviour(emqttd_auth_mod).
 
--include("../../../include/emqttd.hrl").
+-include_lib("emqttd/include/emqttd.hrl").
+
+-import(emqttd_auth_mysql_client, [is_superuser/2, query/3]).
 
 -export([init/1, check/3, description/0]).
 
@@ -34,7 +35,7 @@ check(#mqtt_client{username = Username}, _Password, _State) when ?EMPTY(Username
     {error, username_undefined};
 
 check(Client, Password, #state{super_query = SuperQuery}) when ?EMPTY(Password) ->
-    case emqttd_plugin_mysql:is_superuser(SuperQuery, Client) of
+    case is_superuser(SuperQuery, Client) of
         true  -> ok;
         false -> {error, password_undefined}
     end;
@@ -42,8 +43,8 @@ check(Client, Password, #state{super_query = SuperQuery}) when ?EMPTY(Password) 
 check(Client, Password, #state{super_query = SuperQuery,
                                auth_query  = {AuthSql, AuthParams},
                                hash_type   = HashType}) ->
-    case emqttd_plugin_mysql:is_superuser(SuperQuery, Client) of
-        false -> case emqttd_plugin_mysql:query(AuthSql, AuthParams, Client) of
+    case is_superuser(SuperQuery, Client) of
+        false -> case query(AuthSql, AuthParams, Client) of
                     {ok, [<<"password">>], [[PassHash]]} ->
                         check_pass(PassHash, Password, HashType);
                     {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
