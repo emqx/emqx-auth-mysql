@@ -32,37 +32,34 @@
 start(_StartType, _StartArgs) ->
     gen_conf:init(?APP),
     {ok, Sup} = emqttd_auth_mysql_sup:start_link(),
-    SuperQuery = parse_query(gen_conf:value(?APP, superquery, undefined)),
-    ok = register_auth_mod(SuperQuery),
-    ok = register_acl_mod(SuperQuery),
-    {ok, Sup}.
-
-register_auth_mod(SuperQuery) ->
-    {ok, AuthQuery} = gen_conf:value(?APP, authquery),
-    {ok, HashType}  = gen_conf:value(?APP, password_hash),
-    AuthEnv = {SuperQuery, parse_query(AuthQuery), HashType},
-    emqttd_access_control:register_mod(auth, emqttd_auth_mysql, AuthEnv).
-
-register_acl_mod(SuperQuery) ->
-    with_acl_enabled(fun(AclQuery) ->
+    if_enabled(auth_query, fun(AuthQuery) ->
+        SuperQuery = parse_query(gen_conf:value(?APP, superquery, undefined)),
+        {ok, HashType}  = gen_conf:value(?APP, password_hash),
+        AuthEnv = {parse_query(AuthQuery), SuperQuery, HashType},
+        emqttd_access_control:register_mod(auth, emqttd_auth_mysql, AuthEnv)
+    end),
+    if_enabled(acl_query, fun(AclQuery) ->
         {ok, AclNomatch} = gen_conf:value(?APP, acl_nomatch),
-        AclEnv = {SuperQuery, parse_query(AclQuery), AclNomatch},
+        AclEnv = {parse_query(AclQuery), AclNomatch},
         emqttd_access_control:register_mod(acl, emqttd_acl_mysql, AclEnv)
-    end).
+    end),
+    {ok, Sup}.
 
 prep_stop(State) ->
     emqttd_access_control:unregister_mod(auth, emqttd_auth_mysql),
-    with_acl_enabled(fun(_AclQuery) ->
-        emqttd_access_control:unregister_mod(acl, emqttd_acl_mysql)
-    end),
+    emqttd_access_control:unregister_mod(acl, emqttd_acl_mysql),
     State.
 
 stop(_State) ->
     ok.
 
-with_acl_enabled(Fun) ->
-    case gen_conf:value(?APP, aclquery) of
-        {ok, AclQuery} -> Fun(AclQuery);
-        undefined      -> ok
+%%--------------------------------------------------------------------
+%% Internal function
+%%--------------------------------------------------------------------
+
+if_enabled(Key, Fun) ->
+    case gen_conf:value(?APP, Key) of
+        {ok, Query} -> Fun(Query);
+        undefined   -> ok
     end.
 

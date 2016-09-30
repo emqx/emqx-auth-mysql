@@ -24,38 +24,30 @@
 
 -export([init/1, check/3, description/0]).
 
--record(state, {super_query, auth_query, hash_type}).
+-record(state, {auth_query, super_query, hash_type}).
 
 -define(EMPTY(Username), (Username =:= undefined orelse Username =:= <<>>)).
 
-init({SuperQuery, AuthQuery, HashType}) ->
-    {ok, #state{super_query = SuperQuery, auth_query = AuthQuery, hash_type = HashType}}.
+init({AuthQuery, SuperQuery, HashType}) ->
+    {ok, #state{auth_query = AuthQuery, super_query = SuperQuery, hash_type = HashType}}.
 
-check(#mqtt_client{username = Username}, _Password, _State) when ?EMPTY(Username) ->
-    {error, username_undefined};
+check(#mqtt_client{username = Username}, Password, _State) when ?EMPTY(Username); ?EMPTY(Password) ->
+    {error, username_or_password_undefined};
 
-check(Client, Password, #state{super_query = SuperQuery}) when ?EMPTY(Password) ->
-    case is_superuser(SuperQuery, Client) of
-        true  -> ok;
-        false -> {error, password_undefined}
-    end;
-
-check(Client, Password, #state{super_query = SuperQuery,
-                               auth_query  = {AuthSql, AuthParams},
+check(Client, Password, #state{auth_query  = {AuthSql, AuthParams},
+                               super_query = SuperQuery,
                                hash_type   = HashType}) ->
-    case is_superuser(SuperQuery, Client) of
-        false -> case query(AuthSql, AuthParams, Client) of
-                    {ok, [<<"password">>], [[PassHash]]} ->
-                        check_pass(PassHash, Password, HashType);
-                    {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
-                        check_pass(PassHash, Salt, Password, HashType);
-                    {ok, _Columns, []} ->
-                        {error, notfound};
-                    {error, Error} ->
-                        {error, Error}
-                 end;
-        true  -> ok
-    end.
+    Result = case query(AuthSql, AuthParams, Client) of
+                 {ok, [<<"password">>], [[PassHash]]} ->
+                     check_pass(PassHash, Password, HashType);
+                 {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
+                     check_pass(PassHash, Salt, Password, HashType);
+                 {ok, _Columns, []} ->
+                     {error, notfound};
+                 {error, Reason} ->
+                     {error, Reason}
+             end,
+    case Result of ok -> {ok, is_superuser(SuperQuery, Client)}; Error -> Error end.
 
 check_pass(PassHash, Password, HashType) ->
     check_pass(PassHash, hash(HashType, Password)).
