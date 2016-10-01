@@ -1,4 +1,4 @@
-auth_mysql_app).
+-module(emqttd_auth_mysql_app).
 
 -behaviour(application).
 
