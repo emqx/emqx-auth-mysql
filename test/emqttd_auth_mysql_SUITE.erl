@@ -109,13 +109,13 @@ check_auth(_) ->
     User2 = #mqtt_client{client_id = <<"client2">>, username = <<"testuser2">>},
     
     User3 = #mqtt_client{client_id = <<"client3">>},
-    ok = emqttd_access_control:auth(User1, <<"pass1">>),
+    {ok, false} = emqttd_access_control:auth(User1, <<"pass1">>),
     {error, _} = emqttd_access_control:auth(User1, <<"pass">>),
-    {error, password_undefined} = emqttd_access_control:auth(User1, <<>>),
+    {error,username_or_password_undefined} = emqttd_access_control:auth(User1, <<>>),
     
-    ok = emqttd_access_control:auth(User2, <<"pass2">>),
-    ok = emqttd_access_control:auth(User2, <<>>),
-    ok = emqttd_access_control:auth(User2, <<"errorpwd">>),
+    {ok, true} = emqttd_access_control:auth(User2, <<"pass2">>),
+    {error, username_or_password_undefined} = emqttd_access_control:auth(User2, <<>>),
+    {error, password_error} = emqttd_access_control:auth(User2, <<"errorpwd">>),
     
     
     {error, _} = emqttd_access_control:auth(User3, <<"pwd">>),
