@@ -9,7 +9,7 @@ dep_ecpool   = git https://github.com/emqtt/ecpool master
 dep_gen_conf = git https://github.com/emqtt/gen_conf master
 
 BUILD_DEPS = emqttd
-dep_emqttd = git https://github.com/emqtt/emqttd emq20
+dep_emqttd = git https://github.com/emqtt/emqttd master
 
 ERLC_OPTS += +'{parse_transform, lager_transform}'
 
