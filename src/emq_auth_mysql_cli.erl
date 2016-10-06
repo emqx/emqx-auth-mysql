@@ -15,11 +15,11 @@
 %%--------------------------------------------------------------------
 
 %% @doc MySQL Authentication/ACL Client
--module(emqttd_auth_mysql_client).
+-module(emq_auth_mysql_cli).
 
 -behaviour(ecpool_worker).
 
--include("emqttd_auth_mysql.hrl").
+-include("emq_auth_mysql.hrl").
 
 -include_lib("emqttd/include/emqttd.hrl").
 
