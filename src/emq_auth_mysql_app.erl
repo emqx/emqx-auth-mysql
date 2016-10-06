@@ -41,9 +41,6 @@ prep_stop(State) ->
     State.
 
 stop(_State) ->
-    emqttd_access_control:unregister_mod(auth, emq_auth_mysql),
-    emqttd_access_control:unregister_mod(acl, emq_acl_mysql),
-    emq_plugin_mysql:unload(),
     ok.
 
 reg_authmod(AuthQuery) ->
