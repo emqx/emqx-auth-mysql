@@ -46,7 +46,7 @@ end}.
   {datatype, string}
 ]}.
 
-{mapping, "emq.auth.mysql.passwd.hash", "emq_auth_mysql.passwd_hash", [
+{mapping, "emq.auth.mysql.passwd_hash", "emq_auth_mysql.passwd_hash", [
   {default, sha256},
   {datatype, {enum, [plain, md5, sha, sha256, pbkdf2]}}
 ]}.
@@ -59,7 +59,7 @@ end}.
   {datatype, string}
 ]}.
 
-{mapping, "emq.auth.mysql.acl.nomatch", "emq_auth_mysql.acl_nomatch", [
+{mapping, "emq.auth.mysql.acl_nomatch", "emq_auth_mysql.acl_nomatch", [
   {default, deny},
   {datatype, {enum, [deny, allow]}}
 ]}.
