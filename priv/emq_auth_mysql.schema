@@ -1,65 +1,65 @@
 %%-*- mode: erlang -*-
-%% emq_auth_mysql config
-{mapping, "emq.auth.mysql.server", "emq_auth_mysql.server", [
+%% emq_auth_mysql config mapping
+{mapping, "auth.mysql.server", "emq_auth_mysql.server", [
   {default, {"localhost", 3306}},
-  {datatype, ip}
+  {datatype, [integer, ip]}
 ]}.
 
-{mapping, "emq.auth.mysql.pool", "emq_auth_mysql.server", [
+{mapping, "auth.mysql.pool", "emq_auth_mysql.server", [
   {default, 8},
   {datatype, integer}
 ]}.
 
-{mapping, "emq.auth.mysql.user", "emq_auth_mysql.server", [
+{mapping, "auth.mysql.username", "emq_auth_mysql.server", [
   {default, ""},
   {datatype, string}
 ]}.
 
-{mapping, "emq.auth.mysql.password", "emq_auth_mysql.server", [
+{mapping, "auth.mysql.password", "emq_auth_mysql.server", [
   {default, ""},
   {datatype, string}
 ]}.
 
-{mapping, "emq.auth.mysql.database", "emq_auth_mysql.server", [
+{mapping, "auth.mysql.database", "emq_auth_mysql.server", [
   {default, "mqtt"},
   {datatype, string}
 ]}.
 
 {translation, "emq_auth_mysql.server", fun(Conf) ->
-  {Host, Port} = cuttlefish:conf_get("emq.auth.mysql.server", Conf),
-  Pool = cuttlefish:conf_get("emq.auth.mysql.pool", Conf),
-  User = cuttlefish:conf_get("emq.auth.mysql.user", Conf),
-  Passwd = cuttlefish:conf_get("emq.auth.mysql.password", Conf),
-  DB = cuttlefish:conf_get("emq.auth.mysql.database", Conf),
+  {Host, Port} = cuttlefish:conf_get("auth.mysql.server", Conf),
+  Pool = cuttlefish:conf_get("auth.mysql.pool", Conf),
+  Username = cuttlefish:conf_get("auth.mysql.username", Conf),
+  Passwd = cuttlefish:conf_get("auth.mysql.password", Conf),
+  DB = cuttlefish:conf_get("auth.mysql.database", Conf),
   [{pool_size, Pool},
    {auto_reconnect, 1},
    {host, Host},
    {port, Port},
-   {user, User},
+   {user, Username},
    {password, Passwd},
    {database, DB},
    {encoding, utf8},
    {keep_alive, true}]
 end}.
 
-{mapping, "emq.auth.mysql.authquery", "emq_auth_mysql.authquery", [
+{mapping, "auth.mysql.authquery", "emq_auth_mysql.authquery", [
   {datatype, string}
 ]}.
 
-{mapping, "emq.auth.mysql.passwd_hash", "emq_auth_mysql.passwd_hash", [
+{mapping, "auth.mysql.passwd_hash", "emq_auth_mysql.passwd_hash", [
   {default, sha256},
   {datatype, {enum, [plain, md5, sha, sha256, pbkdf2]}}
 ]}.
 
-{mapping, "emq.auth.mysql.superquery", "emq_auth_mysql.superquery", [
+{mapping, "auth.mysql.superquery", "emq_auth_mysql.superquery", [
   {datatype, string}
 ]}.
 
-{mapping, "emq.auth.mysql.aclquery", "emq_auth_mysql.aclquery", [
+{mapping, "auth.mysql.aclquery", "emq_auth_mysql.aclquery", [
   {datatype, string}
 ]}.
 
-{mapping, "emq.auth.mysql.acl_nomatch", "emq_auth_mysql.acl_nomatch", [
+{mapping, "auth.mysql.acl_nomatch", "emq_auth_mysql.acl_nomatch", [
   {default, deny},
   {datatype, {enum, [deny, allow]}}
 ]}.
