@@ -1,7 +1,7 @@
 %%-*- mode: erlang -*-
 %% emq_auth_mysql config mapping
 {mapping, "auth.mysql.server", "emq_auth_mysql.server", [
-  {default, {"localhost", 3306}},
+  {default, {"127.0.0.1", 3306}},
   {datatype, [integer, ip]}
 ]}.
 
@@ -42,7 +42,7 @@
    {keep_alive, true}]
 end}.
 
-{mapping, "auth.mysql.authquery", "emq_auth_mysql.authquery", [
+{mapping, "auth.mysql.auth_query", "emq_auth_mysql.auth_query", [
   {datatype, string}
 ]}.
 
@@ -51,11 +51,11 @@ end}.
   {datatype, {enum, [plain, md5, sha, sha256, pbkdf2]}}
 ]}.
 
-{mapping, "auth.mysql.superquery", "emq_auth_mysql.superquery", [
+{mapping, "auth.mysql.super_query", "emq_auth_mysql.super_query", [
   {datatype, string}
 ]}.
 
-{mapping, "auth.mysql.aclquery", "emq_auth_mysql.aclquery", [
+{mapping, "auth.mysql.acl_query", "emq_auth_mysql.acl_query", [
   {datatype, string}
 ]}.
 

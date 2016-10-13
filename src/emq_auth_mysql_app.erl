@@ -31,8 +31,8 @@
 
 start(_StartType, _StartArgs) ->
     {ok, Sup} = emq_auth_mysql_sup:start_link(),
-    if_enabled(authquery, fun reg_authmod/1),
-    if_enabled(aclquery,  fun reg_aclmod/1),
+    if_enabled(auth_query, fun reg_authmod/1),
+    if_enabled(acl_query,  fun reg_aclmod/1),
     {ok, Sup}.
 
 prep_stop(State) ->
@@ -44,7 +44,7 @@ stop(_State) ->
     ok.
 
 reg_authmod(AuthQuery) ->
-    SuperQuery = parse_query(application:get_env(?APP, superquery, undefined)),
+    SuperQuery = parse_query(application:get_env(?APP, super_query, undefined)),
     {ok, HashType} = application:get_env(?APP, password_hash),
     AuthEnv = {AuthQuery, SuperQuery, HashType},
     emqttd_access_control:register_mod(auth, emq_auth_mysql, AuthEnv).
