@@ -14,11 +14,11 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(emqttd_auth_mysql_SUITE).
+-module(emq_auth_mysql_SUITE).
 
 -compile(export_all).
 
--define(PID, emqttd_auth_mysql).
+-define(PID, emq_auth_mysql).
 
 -include_lib("emqttd/include/emqttd.hrl").
 
@@ -70,16 +70,13 @@ groups() ->
       check_auth]}].
 
 init_per_suite(Config) ->
+    application:ensure_all_started(cuttlefish),
     DataDir = proplists:get_value(data_dir, Config),
-    application:start(lager),
-    application:set_env(emqttd, conf, filename:join([DataDir, "emqttd.conf"])),
-    application:ensure_all_started(emqttd),
-    application:set_env(emqttd_auth_mysql, conf, filename:join([DataDir, "emqttd_auth_mysql.conf"])),
-    application:ensure_all_started(emqttd_auth_mysql),
+    [start_apps(App, DataDir) || App <- [emqttd, emq_auth_mysql]],
     Config.
 
 end_per_suite(_Config) ->
-    application:stop(emqttd_auth_mysql),
+    application:stop(emq_auth_mysql),
     application:stop(ecpool),
     application:stop(mysql),
     application:stop(emqttd),
@@ -89,8 +86,8 @@ check_acl(_) ->
     init_acl_(),
     User1 = #mqtt_client{client_id = <<"client1">>, username = <<"testuser">>},
     User2 = #mqtt_client{client_id = <<"client2">>, username = <<"xyz">>},
-    allow = emqttd_access_control:check_acl(User1, subscribe, <<"users/testuser/1">>),
-    allow = emqttd_access_control:check_acl(User2, subscribe, <<"a/b/c">>),
+    deny = emqttd_access_control:check_acl(User1, subscribe, <<"users/testuser/1">>),
+    deny = emqttd_access_control:check_acl(User2, subscribe, <<"a/b/c">>),
     deny  = emqttd_access_control:check_acl(User1, subscribe, <<"$SYS/testuser/1">>),
     deny  = emqttd_access_control:check_acl(User2, subscribe, <<"$SYS/testuser/1">>),
     drop_table_(?DROP_ACL_TABLE).
@@ -130,4 +127,13 @@ init_auth_() ->
 drop_table_(Tab) ->
     {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
     ok = mysql:query(Pid, Tab).
+
+start_apps(App, DataDir) ->
+    application:start(lager),
+    Schema = cuttlefish_schema:files([filename:join([DataDir, atom_to_list(App) ++ ".schema"])]),
+    Conf = conf_parse:file(filename:join([DataDir, atom_to_list(App) ++ ".conf"])),
+    NewConfig = cuttlefish_generator:map(Schema, Conf),
+    Vals = proplists:get_value(App, NewConfig),
+    [application:set_env(App, Par, Value) || {Par, Value} <- Vals],
+    application:ensure_all_started(App).
 
