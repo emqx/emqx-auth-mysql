@@ -46,7 +46,7 @@ end}.
   {datatype, string}
 ]}.
 
-{mapping, "auth.mysql.passwd_hash", "emq_auth_mysql.passwd_hash", [
+{mapping, "auth.mysql.password_hash", "emq_auth_mysql.passwd_hash", [
   {default, sha256},
   {datatype, {enum, [plain, md5, sha, sha256, pbkdf2]}}
 ]}.
