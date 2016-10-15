@@ -62,10 +62,10 @@
                              "(2, 'testuser2', 'pass2', 'plain', 1, now())">>).
 
 all() -> 
-    [{group, emqttd_auth_mysql}].
+    [{group, emq_auth_mysql}].
 
 groups() -> 
-    [{emqttd_auth_mysql, [sequence],
+    [{emq_auth_mysql, [sequence],
      [check_acl,
       check_auth]}].
 
