@@ -14,13 +14,13 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(emqttd_auth_mysql).
+-module(emq_auth_mysql).
 
 -behaviour(emqttd_auth_mod).
 
 -include_lib("emqttd/include/emqttd.hrl").
 
--import(emqttd_auth_mysql_client, [is_superuser/2, query/3]).
+-import(emq_auth_mysql_cli, [is_superuser/2, query/3]).
 
 -export([init/1, check/3, description/0]).
 

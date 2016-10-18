@@ -1,6 +1,6 @@
 
-emqttd_auth_mysql
-=================
+emq_auth_mysql
+==============
 
 Authentication, ACL with MySQL Database
 
@@ -14,49 +14,40 @@ make && make tests
 Configure Plugin
 ----------------
 
-File: etc/emqttd_auth_mysql.conf
+File: etc/emq_auth_mysql.conf
 
 ```
-{mysql_pool, [
-    %% pool options
-    {pool_size, 4},
-    {auto_reconnect, 3},
+## Mysql Server
+auth.mysql.server = 127.0.0.1:3306
 
-    %% mysql options
-    {host,     "localhost"},
-    {port,     3306},
-    {user,     ""},
-    {password, ""},
-    {database, "mqtt"},
-    {encoding, utf8}
-]}.
+## Mysql Pool Size
+auth.mysql.pool = 8
 
-%% Variables: %u = username, %c = clientid, %a = ipaddress
+## Mysql Username
+## auth.mysql.username =
 
-%% Superuser Query
-{superquery, "select is_superuser from mqtt_user where username = '%u' limit 1"},
+## Mysql Password
+## auth.mysql.password =
 
-%% Authentication Query: select password only
-{authquery, "select password from mqtt_user where username = '%u' limit 1"},
+## Mysql Database
+auth.mysql.database = mqtt
 
-%% hash algorithm: md5, sha, sha256, pbkdf2?
-{password_hash, sha256},
+## Variables: %u = username, %c = clientid
 
-%% select password with salt
-%% {authquery, "select password, salt from mqtt_user where username = '%u'"},
+## Authentication Query: select password only
+auth.mysql.auth_query = select password from mqtt_user where username = '%u' limit 1
 
-%% sha256 with salt prefix
-%% {password_hash, {salt, sha256}},
+## Password hash: plain, md5, sha, sha256, pbkdf2
+auth.mysql.passwd_hash = sha256
 
-%% sha256 with salt suffix
-%% {password_hash, {sha256, salt}},
+## %% Superuser Query
+auth.mysql.super_query = select is_superuser from mqtt_user where username = '%u' limit 1
 
-%% comment this query, the acl will be disabled
-{aclquery, "select * from mqtt_acl where ipaddr = '%a' or username = '%u' or username = '$all' or clientid = '%c'"},
+## ACL Query Command
+auth.mysql.acl_query = select allow, ipaddr, username, clientid, access, topic from mqtt_acl where ipaddr = '%a' or username = '%u' or username = '$all' or clientid = '%c'
 
-%% If no rules matched, return...
-{acl_nomatch, allow}
-
+## ACL nomatch
+auth.mysql.acl_nomatch = deny
 ```
 
 Import mqtt.sql
@@ -67,7 +58,7 @@ Import mqtt.sql into your database.
 Load Plugin
 -----------
 
-./bin/emqttd_ctl plugins load emqttd_auth_mysql
+./bin/emqttd_ctl plugins load emq_auth_mysql
 
 Auth Table
 ----------

@@ -19,3 +19,4 @@ test/ct.cover.spec
 test/*.beam
 cover/
 eunit.coverdata
+data

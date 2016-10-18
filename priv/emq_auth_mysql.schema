@@ -1,0 +1,66 @@
+%%-*- mode: erlang -*-
+%% emq_auth_mysql config mapping
+{mapping, "auth.mysql.server", "emq_auth_mysql.server", [
+  {default, {"127.0.0.1", 3306}},
+  {datatype, [integer, ip]}
+]}.
+
+{mapping, "auth.mysql.pool", "emq_auth_mysql.server", [
+  {default, 8},
+  {datatype, integer}
+]}.
+
+{mapping, "auth.mysql.username", "emq_auth_mysql.server", [
+  {default, ""},
+  {datatype, string}
+]}.
+
+{mapping, "auth.mysql.password", "emq_auth_mysql.server", [
+  {default, ""},
+  {datatype, string}
+]}.
+
+{mapping, "auth.mysql.database", "emq_auth_mysql.server", [
+  {default, "mqtt"},
+  {datatype, string}
+]}.
+
+{translation, "emq_auth_mysql.server", fun(Conf) ->
+  {Host, Port} = cuttlefish:conf_get("auth.mysql.server", Conf),
+  Pool = cuttlefish:conf_get("auth.mysql.pool", Conf),
+  Username = cuttlefish:conf_get("auth.mysql.username", Conf),
+  Passwd = cuttlefish:conf_get("auth.mysql.password", Conf),
+  DB = cuttlefish:conf_get("auth.mysql.database", Conf),
+  [{pool_size, Pool},
+   {auto_reconnect, 1},
+   {host, Host},
+   {port, Port},
+   {user, Username},
+   {password, Passwd},
+   {database, DB},
+   {encoding, utf8},
+   {keep_alive, true}]
+end}.
+
+{mapping, "auth.mysql.auth_query", "emq_auth_mysql.auth_query", [
+  {datatype, string}
+]}.
+
+{mapping, "auth.mysql.password_hash", "emq_auth_mysql.password_hash", [
+  {default, sha256},
+  {datatype, {enum, [plain, md5, sha, sha256, pbkdf2]}}
+]}.
+
+{mapping, "auth.mysql.super_query", "emq_auth_mysql.super_query", [
+  {datatype, string}
+]}.
+
+{mapping, "auth.mysql.acl_query", "emq_auth_mysql.acl_query", [
+  {datatype, string}
+]}.
+
+{mapping, "auth.mysql.acl_nomatch", "emq_auth_mysql.acl_nomatch", [
+  {default, deny},
+  {datatype, {enum, [deny, allow]}}
+]}.
+
