@@ -2,7 +2,7 @@
 %% emq_auth_mysql config mapping
 {mapping, "auth.mysql.server", "emq_auth_mysql.server", [
   {default, {"127.0.0.1", 3306}},
-  {datatype, [integer, ip]}
+  {datatype, [integer, ip, string]}
 ]}.
 
 {mapping, "auth.mysql.pool", "emq_auth_mysql.server", [
@@ -26,15 +26,22 @@
 ]}.
 
 {translation, "emq_auth_mysql.server", fun(Conf) ->
-  {Host, Port} = cuttlefish:conf_get("auth.mysql.server", Conf),
+  {RHost, RPort} =
+  case cuttlefish:conf_get("auth.mysql.server", Conf) of
+    {Ip, Port} -> {Ip, Port};
+    S          -> case string:tokens(S, ":") of
+                    [Domain]       -> {Domain, 3306};
+                    [Domain, Port] -> {Domain, list_to_integer(Port)}
+                  end
+    end,
   Pool = cuttlefish:conf_get("auth.mysql.pool", Conf),
   Username = cuttlefish:conf_get("auth.mysql.username", Conf),
   Passwd = cuttlefish:conf_get("auth.mysql.password", Conf),
   DB = cuttlefish:conf_get("auth.mysql.database", Conf),
   [{pool_size, Pool},
    {auto_reconnect, 1},
-   {host, Host},
-   {port, Port},
+   {host, RHost},
+   {port, RPort},
    {user, Username},
    {password, Passwd},
    {database, DB},
