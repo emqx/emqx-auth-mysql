@@ -30,7 +30,7 @@
   case cuttlefish:conf_get("auth.mysql.server", Conf) of
     {Ip, Port} -> {Ip, Port};
     S          -> case string:tokens(S, ":") of
-                    [Domain]       -> {Domain, 6379};
+                    [Domain]       -> {Domain, 3306};
                     [Domain, Port] -> {Domain, list_to_integer(Port)}
                   end
     end,
