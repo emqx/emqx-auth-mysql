@@ -26,7 +26,7 @@
 ]}.
 
 {translation, "emq_auth_mysql.server", fun(Conf) ->
-  {RHost, RPort} =
+  {MyHost, MyPort} =
   case cuttlefish:conf_get("auth.mysql.server", Conf) of
     {Ip, Port} -> {Ip, Port};
     S          -> case string:tokens(S, ":") of
@@ -40,8 +40,8 @@
   DB = cuttlefish:conf_get("auth.mysql.database", Conf),
   [{pool_size, Pool},
    {auto_reconnect, 1},
-   {host, RHost},
-   {port, RPort},
+   {host, MyHost},
+   {port, MyPort},
    {user, Username},
    {password, Passwd},
    {database, DB},
