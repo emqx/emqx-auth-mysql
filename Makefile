@@ -22,5 +22,5 @@ include erlang.mk
 app:: rebar.config
 
 app.config::
-	deps/cuttlefish/cuttlefish -l info -e etc/ -c etc/emq_auth_mysql.conf -i priv/emq_auth_mysql.schema -d data
+	./deps/cuttlefish/cuttlefish -l info -e etc/ -c etc/emq_auth_mysql.conf -i priv/emq_auth_mysql.schema -d data
 
