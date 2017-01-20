@@ -33,7 +33,7 @@
 -spec pbkdf2(Password) -> Key | derived_key_too_long when
 	Password :: binary().
 
-pbkdf2(Password) ->
+pbkdf2({Salt,Password}) ->
 	MacFunc1 = resolve_mac_func({hmac, sha256}),
 	{ok, Iterations} = application:get_env(?APP, pbkdf2_iterations),
 	{ok, DerivedLength} = application:get_env(?APP, pbkdf2_derivedLength),
