@@ -12,26 +12,24 @@
 
 -module(emq_pbkdf2).
 
--export([pbkdf2/1, pbkdf2/5, compare_secure/2, to_hex/1]).
+-include("emq_auth_mysql.hrl").
+
+-export([pbkdf2/1, compare_secure/2, to_hex/1]).
 
 
 %-type(hex_char() :: $0 .. $9 | $a .. $f).
 -type(hex_char() :: 48 .. 57 | 97 .. 102).
 -type(hex_list() :: [hex_char()]).
 
-
--type digest_func_info() :: md4 | md5 | ripemd160 | sha | sha224 | sha256 | sha384 | sha512.
-
--type mac_func_info() :: {hmac, digest_func_info()} | digest_func_info().
-
-
 -define(MAX_DERIVED_KEY_LENGTH, (1 bsl 32 - 1)).
 
 %==================
 % Public API
 %==================
--spec pbkdf2(Password) -> Key | derived_key_too_long when
-	Password :: binary().
+-spec pbkdf2({Slat,Password}) -> Key | derived_key_too_long when
+        Slat     :: binary(),
+        Password :: binary(),
+        Key      :: binary().
 
 pbkdf2({Salt,Password}) ->
 	MacFunc1 = resolve_mac_func({hmac, sha256}),
@@ -73,8 +71,9 @@ to_hex([Char | Rest]) ->
 	Acc :: iolist(),
 	Key :: binary().
 
-pbkdf2(MacFunc, Password, Salt, Iterations, DerivedLength, BlockIndex, Acc) when DerivedLength > ?MAX_DERIVED_KEY_LENGTH ->
-	derived_key_too_long.
+pbkdf2(_MacFunc, _Password, _Salt, _Iterations, DerivedLength, _BlockIndex, _Acc) when DerivedLength > ?MAX_DERIVED_KEY_LENGTH ->
+	derived_key_too_long;
+
 
 pbkdf2(MacFunc, Password, Salt, Iterations, DerivedLength, BlockIndex, Acc) ->
 	case iolist_size(Acc) > DerivedLength of
