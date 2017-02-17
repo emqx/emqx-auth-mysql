@@ -51,6 +51,10 @@ check(Client, Password, #state{auth_query  = {AuthSql, AuthParams},
 
 check_pass(PassHash, Password, HashType) ->
     check_pass(PassHash, hash(HashType, Password)).
+check_pass(PassHash, Salt, Password, {salt, pbkdf2}) ->
+    check_pass(PassHash, hash(HashType, {Salt, Password}));
+check_pass(PassHash, Salt, Password, {pbkdf2, salt}) ->
+    check_pass(PassHash, hash(HashType, {Salt, Password}));        
 check_pass(PassHash, Salt, Password, {salt, HashType}) ->
     check_pass(PassHash, hash(HashType, <<Salt/binary, Password/binary>>));
 check_pass(PassHash, Salt, Password, {HashType, salt}) ->

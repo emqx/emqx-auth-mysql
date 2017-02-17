@@ -54,8 +54,16 @@ end}.
 ]}.
 
 {mapping, "auth.mysql.password_hash", "emq_auth_mysql.password_hash", [
-  {default, sha256},
+  {default, pbkdf2},
   {datatype, {enum, [plain, md5, sha, sha256, pbkdf2]}}
+]}.
+
+{mapping, "auth.mysql.pbkdf2_iterations", "emq_auth_mysql.pbkdf2_iterations", [
+  {datatype, integer}
+]}.
+
+{mapping, "auth.mysql.pbkdf2_derivedLength", "emq_auth_mysql.pbkdf2_derivedLength", [
+  {datatype, integer}
 ]}.
 
 {mapping, "auth.mysql.super_query", "emq_auth_mysql.super_query", [
