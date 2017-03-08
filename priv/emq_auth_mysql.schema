@@ -57,6 +57,18 @@ end}.
   {datatype, string}
 ]}.
 
+{mapping, "auth.mysql.pbkdf2_macfun", "emq_auth_mysql.pbkdf2_macfun", [
+  {datatype, atom}
+]}.
+
+{mapping, "auth.mysql.pbkdf2_iterations", "emq_auth_mysql.pbkdf2_iterations", [
+  {datatype, integer}
+]}.
+
+{mapping, "auth.mysql.pbkdf2_dklen", "emq_auth_mysql.pbkdf2_dklen", [
+  {datatype, integer}
+]}.
+
 {mapping, "auth.mysql.super_query", "emq_auth_mysql.super_query", [
   {datatype, string}
 ]}.
