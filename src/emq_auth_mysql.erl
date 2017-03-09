@@ -71,6 +71,3 @@ hash(pbkdf2,{Salt,Password}) ->
     Dklen = application:get_env(?APP, pbkdf2_dklen,20),
     emqttd_auth_mod:passwd_hash(pbkdf2,{Salt,Password,Macfun,Iterations,Dklen});
 hash(Type, Password) -> emqttd_auth_mod:passwd_hash(Type, Password).
-
-
-
