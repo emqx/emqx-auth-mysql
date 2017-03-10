@@ -40,14 +40,9 @@ auth.mysql.auth_query = select password from mqtt_user where username = '%u' lim
 ## Password hash: plain, md5, sha, sha256, pbkdf2
 auth.mysql.passwd_hash = sha256
 
-## pbkdf2 with macfun: md4, md5, ripemd160, sha, sha224, sha256, sha384, sha512
-## auth.mysql.pbkdf2_macfun = sha256
-
-## pbkdf2 with iterations
-## auth.mysql.pbkdf2_iterations = 4096
-
-## pbkdf2 with dklen
-## auth.mysql.pbkdf2_dklen = 20
+## pbkdf2 with macfun iterations dklen
+## macfun: md4, md5, ripemd160, sha, sha224, sha256, sha384, sha512
+auth.mysql.password_hash = pbkdf2 sha256 1000 20
 
 ## %% Superuser Query
 auth.mysql.super_query = select is_superuser from mqtt_user where username = '%u' limit 1

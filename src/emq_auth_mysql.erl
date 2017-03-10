@@ -53,21 +53,19 @@ check(Client, Password, #state{auth_query  = {AuthSql, AuthParams},
 
 check_pass(PassHash, Password, HashType) ->
     check_pass(PassHash, hash(HashType, Password)).
-check_pass(PassHash, Salt, Password, pbkdf2) ->
-    check_pass(PassHash,hash(pbkdf2,{Salt,Password}));
+check_pass(PassHash, Salt, Password, {pbkdf2, Macfun, Iterations, Dklen}) ->
+    check_pass(PassHash,hash(pbkdf2,{Salt,Password, Macfun, Iterations, Dklen}));
 check_pass(PassHash, Salt, Password, {salt, HashType}) ->
-    check_pass(PassHash, hash(HashType, <<Salt/binary, Password/binary>>));       
+    check_pass(PassHash, hash(HashType, <<Salt/binary, Password/binary>>));
 check_pass(PassHash, Salt, Password, {HashType, salt}) ->
-    check_pass(PassHash, hash(HashType, <<Password/binary, Salt/binary>>)).   
+    check_pass(PassHash, hash(HashType, <<Password/binary, Salt/binary>>)).
 
 check_pass(PassHash, PassHash) -> ok;
 check_pass(_, _)               -> {error, password_error}.
 
 description() -> "Authentication with MySQL".
 
-hash(pbkdf2,{Salt,Password}) -> 
-    Macfun = application:get_env(?APP, pbkdf2_macfun,sha256),
-    Iterations = application:get_env(?APP, pbkdf2_iterations,4096),
-    Dklen = application:get_env(?APP, pbkdf2_dklen,20),
-    emqttd_auth_mod:passwd_hash(pbkdf2,{Salt,Password,Macfun,Iterations,Dklen});
 hash(Type, Password) -> emqttd_auth_mod:passwd_hash(Type, Password).
+
+
+
