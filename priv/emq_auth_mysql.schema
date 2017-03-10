@@ -75,6 +75,7 @@ end}.
     case string:tokens(HashValue, " ") of
         [Hash]           -> list_to_atom(Hash);
         [Prefix, Suffix] -> {list_to_atom(Prefix), list_to_atom(Suffix)};
+        [Hash, MacFun, Iterations, Dklen] -> {list_to_atom(Hash), list_to_atom(MacFun), list_to_integer(Iterations), list_to_integer(Dklen)};
         _                -> plain
     end
 end}.

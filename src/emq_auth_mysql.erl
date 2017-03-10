@@ -18,6 +18,8 @@
 
 -behaviour(emqttd_auth_mod).
 
+-include("emq_auth_mysql.hrl").
+
 -include_lib("emqttd/include/emqttd.hrl").
 
 -import(emq_auth_mysql_cli, [is_superuser/2, query/3]).
@@ -51,6 +53,8 @@ check(Client, Password, #state{auth_query  = {AuthSql, AuthParams},
 
 check_pass(PassHash, Password, HashType) ->
     check_pass(PassHash, hash(HashType, Password)).
+check_pass(PassHash, Salt, Password, {pbkdf2, Macfun, Iterations, Dklen}) ->
+    check_pass(PassHash,hash(pbkdf2,{Salt,Password, Macfun, Iterations, Dklen}));
 check_pass(PassHash, Salt, Password, {salt, HashType}) ->
     check_pass(PassHash, hash(HashType, <<Salt/binary, Password/binary>>));
 check_pass(PassHash, Salt, Password, {HashType, salt}) ->
@@ -62,4 +66,3 @@ check_pass(_, _)               -> {error, password_error}.
 description() -> "Authentication with MySQL".
 
 hash(Type, Password) -> emqttd_auth_mod:passwd_hash(Type, Password).
-
