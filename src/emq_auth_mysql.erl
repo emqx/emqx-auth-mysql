@@ -45,7 +45,7 @@ check(Client, Password, #state{auth_query  = {AuthSql, AuthParams},
                  {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
                      check_pass(PassHash, Salt, Password, HashType);
                  {ok, _Columns, []} ->
-                     {error, notfound};
+                     ignore;
                  {error, Reason} ->
                      {error, Reason}
              end,
