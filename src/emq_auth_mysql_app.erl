@@ -50,9 +50,7 @@ reg_authmod(AuthQuery) ->
     emqttd_access_control:register_mod(auth, emq_auth_mysql, AuthEnv).
 
 reg_aclmod(AclQuery) ->
-    {ok, AclNomatch} = application:get_env(?APP, acl_nomatch),
-    AclEnv = {AclQuery, AclNomatch},
-    emqttd_access_control:register_mod(acl, emq_acl_mysql, AclEnv).
+    emqttd_access_control:register_mod(acl, emq_acl_mysql, AclQuery).
 
 %%--------------------------------------------------------------------
 %% Internal function
