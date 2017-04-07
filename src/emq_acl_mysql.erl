@@ -73,7 +73,7 @@ who(null, null, null) ->
     throw(undefined_who);
 who(CIDR, Username, ClientId) ->
     Cols = [{ipaddr, b2l(CIDR)}, {user, Username}, {client, ClientId}],
-    case [{C, V} || {C, V} <- Cols, V =/= null] of
+    case [{C, V} || {C, V} <- Cols, not empty(V)] of
         [Who] -> Who;
         Conds -> {'and', Conds}
     end.
@@ -103,4 +103,9 @@ description() ->
 
 b2l(null) -> null;
 b2l(B)    -> binary_to_list(B).
+
+empty(null) -> true;
+empty("")   -> true;
+empty(<<>>) -> true;
+empty(_)    -> false.
 
