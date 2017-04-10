@@ -1,6 +1,6 @@
 PROJECT = emq_auth_mysql
 PROJECT_DESCRIPTION = Authentication/ACL with MySQL
-PROJECT_VERSION = 2.1.0
+PROJECT_VERSION = 2.2.0
 
 DEPS = mysql ecpool
 
@@ -8,7 +8,7 @@ dep_mysql  = git https://github.com/mysql-otp/mysql-otp 1.2.0
 dep_ecpool = git https://github.com/emqtt/ecpool master
 
 BUILD_DEPS = emqttd cuttlefish
-dep_emqttd = git https://github.com/emqtt/emqttd master
+dep_emqttd = git https://github.com/emqtt/emqttd emq22
 dep_cuttlefish = git https://github.com/emqtt/cuttlefish
 
 NO_AUTOPATCH = cuttlefish
