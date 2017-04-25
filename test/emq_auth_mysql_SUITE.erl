@@ -58,8 +58,8 @@
                              ") ENGINE=MyISAM DEFAULT CHARSET=utf8">>).
 
 -define(INIT_AUTH, <<"INSERT INTO mqtt_user (id, username, password, salt, is_superuser, created)"
-                     "VALUES  (1, 'testuser1', 'pass1', 'plain', 0, now())," 
-                             "(2, 'testuser2', 'pass2', 'plain', 1, now())">>).
+                     "VALUES  (1, 'testuser1', 'b95de58f7646da3b2de64466b3429244885addac', 'salt', 0, now())," 
+                             "(2, 'testuser2', '3ef26c7a285bbfdebd8ebe895dbada207d926c15', 'salt', 1, now())">>).
 
 all() -> 
     [{group, emq_auth_mysql}].
@@ -104,13 +104,13 @@ check_auth(_) ->
     User2 = #mqtt_client{client_id = <<"client2">>, username = <<"testuser2">>},
     
     User3 = #mqtt_client{client_id = <<"client3">>},
-    {ok, false} = emqttd_access_control:auth(User1, <<"pass1">>),
+    {ok, false} = emqttd_access_control:auth(User1, <<"test">>),
     {error, _} = emqttd_access_control:auth(User1, <<"pass">>),
-    {error,username_or_password_undefined} = emqttd_access_control:auth(User1, <<>>),
+    {error,_} = emqttd_access_control:auth(User1, <<>>),
     
-    {ok, true} = emqttd_access_control:auth(User2, <<"pass2">>),
-    {error, username_or_password_undefined} = emqttd_access_control:auth(User2, <<>>),
-    {error, password_error} = emqttd_access_control:auth(User2, <<"errorpwd">>),
+    {ok, true} = emqttd_access_control:auth(User2, <<"test1">>),
+    {error, _} = emqttd_access_control:auth(User2, <<>>),
+    {error, _} = emqttd_access_control:auth(User2, <<"errorpwd">>),
     
     
     {error, _} = emqttd_access_control:auth(User3, <<"pwd">>),
