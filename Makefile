@@ -15,6 +15,13 @@ NO_AUTOPATCH = cuttlefish
 
 ERLC_OPTS += +'{parse_transform, lager_transform}'
 
+TEST_DEPS = emqttc emq_auth_username
+dep_emqttc = git https://github.com/emqtt/emqttc
+dep_emq_auth_username = git https://github.com/emqtt/emq-auth-username
+
+TEST_ERLC_OPTS += +debug_info
+TEST_ERLC_OPTS += +'{parse_transform, lager_transform}'
+
 COVER = true
 
 include erlang.mk
