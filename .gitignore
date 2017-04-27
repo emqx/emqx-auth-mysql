@@ -20,3 +20,4 @@ test/*.beam
 cover/
 eunit.coverdata
 data
+.DS_Store
