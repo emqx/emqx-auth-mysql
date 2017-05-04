@@ -1,6 +1,6 @@
 PROJECT = emq_auth_mysql
 PROJECT_DESCRIPTION = Authentication/ACL with MySQL
-PROJECT_VERSION = 2.1.2
+PROJECT_VERSION = 2.2
 
 DEPS = mysql ecpool
 
@@ -14,6 +14,13 @@ dep_cuttlefish = git https://github.com/emqtt/cuttlefish
 NO_AUTOPATCH = cuttlefish
 
 ERLC_OPTS += +'{parse_transform, lager_transform}'
+
+TEST_DEPS = emqttc emq_auth_username
+dep_emqttc = git https://github.com/emqtt/emqttc
+dep_emq_auth_username = git https://github.com/emqtt/emq-auth-username
+
+TEST_ERLC_OPTS += +debug_info
+TEST_ERLC_OPTS += +'{parse_transform, lager_transform}'
 
 COVER = true
 

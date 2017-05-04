@@ -24,25 +24,24 @@
 %% ACL Callbacks
 -export([init/1, check_acl/2, reload_acl/1, description/0]).
 
--record(state, {acl_query, acl_nomatch}).
+-record(state, {acl_query}).
 
-init({AclQuery, AclNomatch}) ->
-    {ok, #state{acl_query = AclQuery, acl_nomatch = AclNomatch}}.
+init(AclQuery) ->
+    {ok, #state{acl_query = AclQuery}}.
 
 check_acl({#mqtt_client{username = <<$$, _/binary>>}, _PubSub, _Topic}, _State) ->
     ignore; 
 
-check_acl({Client, PubSub, Topic}, #state{acl_query   = {AclSql, AclParams},
-                                          acl_nomatch = Default}) ->
+check_acl({Client, PubSub, Topic}, #state{acl_query   = {AclSql, AclParams}}) ->
     case emq_auth_mysql_cli:query(AclSql, AclParams, Client) of
         {ok, _Columns, []} ->
-            Default;
+            ignore;
         {ok, _Columns, Rows} ->
             Rules = filter(PubSub, compile(Rows)),
             case match(Client, Topic, Rules) of
                 {matched, allow} -> allow;
                 {matched, deny}  -> deny;
-                nomatch          -> Default
+                nomatch          -> ignore
             end
     end.
 
