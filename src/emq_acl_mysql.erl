@@ -42,7 +42,10 @@ check_acl({Client, PubSub, Topic}, #state{acl_query   = {AclSql, AclParams}}) ->
                 {matched, allow} -> allow;
                 {matched, deny}  -> deny;
                 nomatch          -> ignore
-            end
+            end;
+        {error, Reason} ->
+            lager:error("Mysql check_acl error: ~p~n", [Reason]),
+            ignore
     end.
 
 match(_Client, _Topic, []) ->
