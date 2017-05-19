@@ -35,7 +35,7 @@ auth.mysql.database = mqtt
 ## Variables: %u = username, %c = clientid
 
 ## Authentication Query: select password or password,salt
-auth.mysql.auth_query = select your_password_field as password from mqtt_user where username = '%u' limit 1
+auth.mysql.auth_query = select password from mqtt_user where username = '%u' limit 1
 
 ## Password hash: plain, md5, sha, sha256, bcrypt
 auth.mysql.password_hash = sha256
