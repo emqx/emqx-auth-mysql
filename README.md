@@ -36,8 +36,8 @@ auth.mysql.database = mqtt
 
 ## Authentication Query: select password or password, salt
 ## Note: column names should be "password" and "salt" (if used). In case column
-## names differ in your DB - please use aliases, e.g. "my_column name as password".
-auth.mysql.auth_query = select passwordhash as password from mqtt_user where username = '%u' limit 1
+## names differ in your DB - please use aliases, e.g. "my_column_name as password".
+auth.mysql.auth_query = select password_hash as password from mqtt_user where username = '%u' limit 1
 
 ## Password hash: plain, md5, sha, sha256, bcrypt
 auth.mysql.password_hash = sha256
