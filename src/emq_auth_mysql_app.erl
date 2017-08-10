@@ -33,11 +33,13 @@ start(_StartType, _StartArgs) ->
     {ok, Sup} = emq_auth_mysql_sup:start_link(),
     if_enabled(auth_query, fun reg_authmod/1),
     if_enabled(acl_query,  fun reg_aclmod/1),
+    emq_auth_mysql_config:register(),
     {ok, Sup}.
 
 prep_stop(State) ->
     emqttd_access_control:unregister_mod(auth, emq_auth_mysql),
     emqttd_access_control:unregister_mod(acl, emq_acl_mysql),
+    emq_auth_mysql_config:unregister(),
     State.
 
 stop(_State) ->
