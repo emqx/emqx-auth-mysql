@@ -44,16 +44,12 @@ formatter_callback([_, _, "server"], Params) ->
     lists:concat([proplists:get_value(host, Params), ":", proplists:get_value(port, Params)]);
 formatter_callback([_, _, "pool"], Params) ->
     proplists:get_value(pool_size, Params);
-formatter_callback([_, _, "database"], Params) ->
-    proplists:get_value(database, Params);
-formatter_callback([_, _, "username"], Params) ->
-    proplists:get_value(user, Params);
-formatter_callback([_, _, "password"], Params) ->
-    proplists:get_value(password, Params);
 formatter_callback([_, _, "password_hash"], Params) when is_atom(Params) ->
     Params;
 formatter_callback([_, _, "password_hash"], Params) when is_tuple(Params) ->
-    format(tuple_to_list(Params)).
+    format(tuple_to_list(Params));
+formatter_callback([_, _, Key], Params) ->
+    proplists:get_value(list_to_atom(Key), Params).
 
 %%--------------------------------------------------------------------
 %% UnRegister formatter
@@ -80,21 +76,14 @@ config_callback([_, _, "pool"], Value) ->
     {ok, Env} = application:get_env(?APP, server),
     application:set_env(?APP, server, lists:keyreplace(pool_size, 1, Env, {pool_size, Value})),
     " successfully\n";
-config_callback([_, _, "username"], Value) ->
-    {ok, Env} = application:get_env(?APP, server),
-    application:set_env(?APP, server, lists:keyreplace(username, 1, Env, {username, Value})),
-    " successfully\n";
-config_callback([_, _, "password"], Value) ->
-    {ok, Env} = application:get_env(?APP, server),
-    application:set_env(?APP, server, lists:keyreplace(password, 1, Env, {password, Value})),
-    " successfully\n";
-config_callback([_, _, "database"], Value) ->
-    {ok, Env} = application:get_env(?APP, server),
-    application:set_env(?APP, server, lists:keyreplace(database, 1, Env, {database, Value})),
-    " successfully\n";
 config_callback([_, _, "password_hash"], Value0) ->
     Value = parse_password_hash(Value0),
     application:set_env(?APP, password_hash, Value),
+    " successfully\n";
+config_callback([_, _, Key0], Value) ->
+    Key = list_to_atom(Key0),
+    {ok, Env} = application:get_env(?APP, server),
+    application:set_env(?APP, server, lists:keyreplace(Key, 1, Env, {Key, Value})),
     " successfully\n".
 
 %%--------------------------------------------------------------------
