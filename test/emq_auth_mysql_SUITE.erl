@@ -194,12 +194,12 @@ server_config(_) ->
                      "username=admin",
                      "password=public",
                      "database=sercrit",
-                     "password_hash=plain"],
+                     "password_hash=sha256,salt"],
     lists:foreach(fun set_cmd/1, SetConfigKeys),
     {ok, E} =  application:get_env(emq_auth_mysql, server),
     {ok, Hash} =  application:get_env(emq_auth_mysql, password_hash),
     ?assertEqual(lists:sort(I), lists:sort(E)),
-    ?assertEqual(plain, Hash).
+    ?assertEqual('sha256,salt', Hash).
 
 set_cmd(Key) ->
     emqttd_cli_config:run(["config", "set", string:join(["auth.mysql", Key], "."), "--app=emq_auth_mysql"]).
