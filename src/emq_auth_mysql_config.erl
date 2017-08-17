@@ -68,13 +68,17 @@ register_config() ->
 config_callback([_, _, "server"], Value0) ->
     {Host, Port} = parse_servers(Value0),
     {ok, Env} = application:get_env(?APP, server),
-    Env1 = lists:keyreplace(hosts, 1, Env, {host, Host}),
+    Env1 = lists:keyreplace(host, 1, Env, {host, Host}),
     Env2 = lists:keyreplace(port, 1, Env1, {port, Port}),
     application:set_env(?APP, server, Env2),
     " successfully\n";
 config_callback([_, _, "pool"], Value) ->
     {ok, Env} = application:get_env(?APP, server),
     application:set_env(?APP, server, lists:keyreplace(pool_size, 1, Env, {pool_size, Value})),
+    " successfully\n";
+config_callback([_, _, "username"], Value) ->
+    {ok, Env} = application:get_env(?APP, server),
+    application:set_env(?APP, server, lists:keyreplace(user, 1, Env, {user, Value})),
     " successfully\n";
 config_callback([_, _, "password_hash"], Value0) ->
     Value = parse_password_hash(Value0),
