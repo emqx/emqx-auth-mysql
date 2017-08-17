@@ -6,7 +6,7 @@ DEPS = mysql ecpool clique
 
 dep_mysql  = git https://github.com/mysql-otp/mysql-otp 1.2.0
 dep_ecpool = git https://github.com/emqtt/ecpool master
-dep_clique = git https://github.com/turtleDeng/clique
+dep_clique = git https://github.com/emqtt/clique
 
 BUILD_DEPS = emqttd cuttlefish
 dep_emqttd = git https://github.com/emqtt/emqttd develop
