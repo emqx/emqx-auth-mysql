@@ -73,7 +73,8 @@
 all() -> 
     [{group, emq_auth_mysql_auth},
      {group, emq_auth_mysql_acl},
-     {group, emq_auth_mysql}].
+     {group, emq_auth_mysql},
+     {group, auth_mysql_config}].
 
 groups() ->
     [{emq_auth_mysql_auth, [sequence],
@@ -81,7 +82,8 @@ groups() ->
     {emq_auth_mysql_acl, [sequence],
      [check_acl, acl_super]},
     {emq_auth_mysql, [sequence],
-     [comment_config]}
+     [comment_config]},
+    {auth_mysql_config, [sequence], [server_config]}
     ].
 
 init_per_suite(Config) ->
@@ -176,6 +178,31 @@ comment_config(_) ->
     application:start(?APP),
     ?assertEqual([], emqttd_access_control:lookup_mods(auth)),
     ?assertEqual([], emqttd_access_control:lookup_mods(acl)).
+
+server_config(_) ->
+    I = [{host, "localhost"},
+         {pool_size, 1},
+         {port, 3306},
+         {auto_reconnect, 1},
+         {user, "admin"},
+         {password, "public"},
+         {database, "sercrit"},
+         {encoding, utf8},
+         {keep_alive, true}],
+    SetConfigKeys = ["server=localhost:3306",
+                     "pool=1",
+                     "username=admin",
+                     "password=public",
+                     "database=sercrit",
+                     "password_hash=sha256,salt"],
+    lists:foreach(fun set_cmd/1, SetConfigKeys),
+    {ok, E} =  application:get_env(emq_auth_mysql, server),
+    {ok, Hash} =  application:get_env(emq_auth_mysql, password_hash),
+    ?assertEqual(lists:sort(I), lists:sort(E)),
+    ?assertEqual({sha256,salt}, Hash).
+
+set_cmd(Key) ->
+    emqttd_cli_config:run(["config", "set", string:join(["auth.mysql", Key], "."), "--app=emq_auth_mysql"]).
 
 init_auth_() ->
     {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
