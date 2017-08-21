@@ -199,7 +199,7 @@ server_config(_) ->
     {ok, E} =  application:get_env(emq_auth_mysql, server),
     {ok, Hash} =  application:get_env(emq_auth_mysql, password_hash),
     ?assertEqual(lists:sort(I), lists:sort(E)),
-    ?assertEqual('sha256,salt', Hash).
+    ?assertEqual({sha256,salt}, Hash).
 
 set_cmd(Key) ->
     emqttd_cli_config:run(["config", "set", string:join(["auth.mysql", Key], "."), "--app=emq_auth_mysql"]).
