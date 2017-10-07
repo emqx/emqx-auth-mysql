@@ -14,15 +14,13 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(emq_auth_mysql).
+-module(emqx_auth_mysql).
 
--behaviour(emqttd_auth_mod).
+-behaviour(emqx_auth_mod).
 
--include("emq_auth_mysql.hrl").
+-include_lib("emqx/include/emqx.hrl").
 
--include_lib("emqttd/include/emqttd.hrl").
-
--import(emq_auth_mysql_cli, [is_superuser/2, query/3]).
+-import(emqx_auth_mysql_cli, [is_superuser/2, query/3]).
 
 -export([init/1, check/3, description/0]).
 
@@ -67,4 +65,5 @@ check_pass(_, _)               -> {error, password_error}.
 
 description() -> "Authentication with MySQL".
 
-hash(Type, Password) -> emqttd_auth_mod:passwd_hash(Type, Password).
+hash(Type, Password) -> emqx_auth_mod:passwd_hash(Type, Password).
+

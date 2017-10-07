@@ -1,6 +1,6 @@
 
-emq_auth_mysql
-==============
+emqx_auth_mysql
+===============
 
 Authentication, ACL with MySQL Database
 
@@ -14,7 +14,7 @@ make && make tests
 Configure Plugin
 ----------------
 
-File: etc/emq_auth_mysql.conf
+File: etc/emqx_auth_mysql.conf
 
 ```
 ## Mysql Server
@@ -34,7 +34,7 @@ auth.mysql.database = mqtt
 
 ## Variables: %u = username, %c = clientid
 
-## Authentication Query: select password or password, salt
+## Authentication Query: select password or password,salt
 auth.mysql.auth_query = select password from mqtt_user where username = '%u' limit 1
 
 ## Note: column names should be "password" and "salt" (if used). In case column
@@ -72,7 +72,7 @@ Import mqtt.sql into your database.
 Load Plugin
 -----------
 
-./bin/emqttd_ctl plugins load emq_auth_mysql
+./bin/emqx_ctl plugins load emqx_auth_mysql
 
 Auth Table
 ----------
@@ -114,7 +114,7 @@ License
 Apache License Version 2.0
 
 Author
--------
+------
 
-Feng Lee <feng@emqtt.io>.
+EMQ X-Men Team.
 

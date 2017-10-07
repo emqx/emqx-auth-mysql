@@ -14,14 +14,13 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc MySQL Authentication/ACL Client
--module(emq_auth_mysql_cli).
+-module(emqx_auth_mysql_cli).
 
 -behaviour(ecpool_worker).
 
--include("emq_auth_mysql.hrl").
+-include("emqx_auth_mysql.hrl").
 
--include_lib("emqttd/include/emqttd.hrl").
+-include_lib("emqx/include/emqx.hrl").
 
 -export([is_superuser/2, parse_query/1, connect/1, query/3]).
 

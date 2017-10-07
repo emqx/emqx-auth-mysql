@@ -1,29 +1,5 @@
 %%-*- mode: erlang -*-
-%% EMQ config mapping
-
-%%--------------------------------------------------------------------
-%% Cluster
-%%--------------------------------------------------------------------
-
-%% Cluster ID
-{mapping, "cluster.id", "emqttd.cluster", [
-  {default, "emq"},
-  {datatype, string}
-]}.
-
-%% Cluster Multicast Addr
-{mapping, "cluster.multicast", "emqttd.cluster", [
-  {default, "239.192.0.1:44369"},
-  {datatype, string}
-]}.
-
-{translation, "emqttd.cluster", fun(Conf) ->
-    Multicast = cuttlefish:conf_get("cluster.multicast", Conf),
-    [Addr, Port] = string:tokens(Multicast, ":"),
-    {ok, Ip} = inet_parse:address(Addr),
-    [{id, cuttlefish:conf_get("cluster.id", Conf)},
-     {multicast, {Ip, list_to_integer(Port)}}]
-end}.
+%% EMQ X config mapping
 
 %%--------------------------------------------------------------------
 %% Erlang Node
@@ -31,12 +7,12 @@ end}.
 
 %% @doc Erlang node name
 {mapping, "node.name", "vm_args.-name", [
-  {default, "emq@127.0.0.1"}
+  {default, "emqx@127.0.0.1"}
 ]}.
 
 %% @doc Secret cookie for distributed erlang node
 {mapping, "node.cookie", "vm_args.-setcookie", [
-  {default, "emqsecretcookie"}
+  {default, "emqx_dist_cookie"}
 ]}.
 
 %% @doc SMP Support
@@ -156,16 +132,74 @@ end}.
 
 %% @doc http://www.erlang.org/doc/man/kernel_app.html
 {mapping, "node.dist_listen_min", "kernel.inet_dist_listen_min", [
-  {commented, 6369},
+  {commented, 6000},
   {datatype, integer},
   hidden
 ]}.
 
 %% @see node.dist_listen_min
 {mapping, "node.dist_listen_max", "kernel.inet_dist_listen_max", [
-  {commented, 6369},
+  {commented, 7000},
   {datatype, integer},
   hidden
+]}.
+
+%%--------------------------------------------------------------------
+%% RPC Args
+%%--------------------------------------------------------------------
+
+%% RPC server port.
+{mapping, "rpc.tcp_server_port", "gen_rpc.tcp_server_port", [
+  {default, 5369},
+  {datatype, integer}
+]}.
+
+%% Default TCP port for outgoing connections
+{mapping, "rpc.tcp_client_port", "gen_rpc.tcp_client_port", [
+  {default, 5369},
+  {datatype, integer}
+]}.
+
+%% Client connect timeout
+{mapping, "rpc.connect_timeout", "gen_rpc.connect_timeout", [
+  {default, 5000},
+  {datatype, integer}
+]}.
+
+%% Client and Server send timeout
+{mapping, "rpc.send_timeout", "gen_rpc.send_timeout", [
+  {default, 5000},
+  {datatype, integer}
+]}.
+
+%% Authentication timeout
+{mapping, "rpc.authentication_timeout", "gen_rpc.authentication_timeout", [
+  {default, 5000},
+  {datatype, integer}
+]}.
+
+%% Default receive timeout for call() functions
+{mapping, "rpc.call_receive_timeout", "gen_rpc.call_receive_timeout", [
+  {default, 15000},
+  {datatype, integer}
+]}.
+
+%% Socket keepalive configuration
+{mapping, "rpc.socket_keepalive_idle", "gen_rpc.socket_keepalive_idle", [
+  {default, 5},
+  {datatype, integer}
+]}.
+
+%% Seconds between probes
+{mapping, "rpc.socket_keepalive_interval", "gen_rpc.socket_keepalive_interval", [
+  {default, 5},
+  {datatype, integer}
+]}.
+
+%% Probes lost to close the connection
+{mapping, "rpc.socket_keepalive_count", "gen_rpc.socket_keepalive_count", [
+  {default, 5},
+  {datatype, integer}
 ]}.
 
 %%--------------------------------------------------------------------
@@ -203,7 +237,7 @@ end}.
 ]}.
 
 {mapping, "log.syslog.identity", "lager.handlers", [
-  {default, "emqttd"},
+  {default, "emq"},
   {datatype, string}
 ]}.
 
@@ -213,7 +247,7 @@ end}.
 ]}.
 
 {mapping, "log.syslog.level", "lager.handlers", [
-  {default, error},
+  {default, err},
   {datatype, {enum, [debug, info, notice, warning, error, critical, alert, emergency]}}
 ]}.
 
@@ -261,9 +295,9 @@ end}.
 
     SyslogHandler = case cuttlefish:conf_get("log.syslog", Conf) of
       false -> [];
-      true  -> [{lager_syslog_backend,
-                  [cuttlefish:conf_get("log.syslog.identity", Conf),
-                   cuttlefish:conf_get("log.syslog.facility", Conf),
+      true  -> [{lager_syslog_backend, 
+                  [cuttlefish:conf_get("log.syslog.identity", Conf), 
+                   cuttlefish:conf_get("log.syslog.facility", Conf), 
                    cuttlefish:conf_get("log.syslog.level", Conf)]}]
     end,
 
@@ -302,25 +336,19 @@ end}.
 %%--------------------------------------------------------------------
 
 %% @doc Allow Anonymous
-{mapping, "mqtt.allow_anonymous", "emqttd.allow_anonymous", [
+{mapping, "mqtt.allow_anonymous", "emqx.allow_anonymous", [
   {default, false},
   {datatype, {enum, [true, false]}}
 ]}.
 
-%% @doc ACL nomatch
-{mapping, "mqtt.acl_nomatch", "emqttd.acl_nomatch", [
-  {default, allow},
-  {datatype, {enum, [allow, deny]}}
-]}.
-
 %% @doc Default ACL File
-{mapping, "mqtt.acl_file", "emqttd.acl_file", [
+{mapping, "mqtt.acl_file", "emqx.acl_file", [
   {datatype, string},
   hidden
 ]}.
 
 %% @doc Cache ACL for PUBLISH
-{mapping, "mqtt.cache_acl", "emqttd.cache_acl", [
+{mapping, "mqtt.cache_acl", "emqx.cache_acl", [
   {default, true},
   {datatype, {enum, [true, false]}}
 ]}.
@@ -330,57 +358,48 @@ end}.
 %%--------------------------------------------------------------------
 
 %% @doc Set the Max ClientId Length Allowed.
-{mapping, "mqtt.max_clientid_len", "emqttd.protocol", [
+{mapping, "mqtt.max_clientid_len", "emqx.protocol", [
   {default, 1024},
   {datatype, integer}
 ]}.
 
 %% @doc Max Packet Size Allowed, 64K by default.
-{mapping, "mqtt.max_packet_size", "emqttd.protocol", [
+{mapping, "mqtt.max_packet_size", "emqx.protocol", [
   {default, "64KB"},
   {datatype, bytesize}
 ]}.
 
-{translation, "emqttd.protocol", fun(Conf) ->
+{translation, "emqx.protocol", fun(Conf) ->
   [{max_clientid_len, cuttlefish:conf_get("mqtt.max_clientid_len", Conf)},
    {max_packet_size,  cuttlefish:conf_get("mqtt.max_packet_size", Conf)}]
 end}.
-
-%%--------------------------------------------------------------------
-%% MQTT Connection
-%%--------------------------------------------------------------------
-
-%% @doc Force the client to GC: integer
-{mapping, "mqtt.conn.force_gc_count", "emqttd.conn_force_gc_count", [
-  {datatype, integer}
-]}.
 
 %%--------------------------------------------------------------------
 %% MQTT Client
 %%--------------------------------------------------------------------
 
 %% @doc Max Publish Rate of Message
-{mapping, "mqtt.client.max_publish_rate", "emqttd.client", [
+{mapping, "mqtt.client.max_publish_rate", "emqx.client", [
   {default, 0},
   {datatype, integer}
 ]}.
 
 %% @doc Client Idle Timeout.
-{mapping, "mqtt.client.idle_timeout", "emqttd.client", [
+{mapping, "mqtt.client.idle_timeout", "emqx.client", [
   {default, "30s"},
   {datatype, {duration, ms}}
 ]}.
 
 %% @doc Enable Stats of Client.
-{mapping, "mqtt.client.enable_stats", "emqttd.client", [
+{mapping, "mqtt.client.enable_stats", "emqx.client", [
   {default, off},
-  {datatype, flag}
+  {datatype, [{duration, ms}, flag]}
 ]}.
 
-{translation, "emqttd.client", fun(Conf) ->
+{translation, "emqx.client", fun(Conf) ->
   [{max_publish_rate, cuttlefish:conf_get("mqtt.client.max_publish_rate", Conf)},
-   {client_idle_timeout, cuttlefish:conf_get("mqtt.client.idle_timeout", Conf)},
-   {client_enable_stats, cuttlefish:conf_get("mqtt.client.enable_stats", Conf)}]
+   {idle_timeout,     cuttlefish:conf_get("mqtt.client.idle_timeout", Conf)},
+   {enable_stats,     cuttlefish:conf_get("mqtt.client.enable_stats", Conf)}]
 end}.
 
 %%--------------------------------------------------------------------
@@ -388,61 +407,55 @@ end}.
 %%--------------------------------------------------------------------
 
 %% @doc Max Number of Subscriptions Allowed
-{mapping, "mqtt.session.max_subscriptions", "emqttd.session", [
+{mapping, "mqtt.session.max_subscriptions", "emqx.session", [
   {default, 0},
   {datatype, integer}
 ]}.
 
 %% @doc Upgrade QoS?
-{mapping, "mqtt.session.upgrade_qos", "emqttd.session", [
+{mapping, "mqtt.session.upgrade_qos", "emqx.session", [
   {default, off},
   {datatype, flag}
 ]}.
 
 %% @doc Max number of QoS 1 and 2 messages that can be “inflight” at one time.
 %% 0 means no limit
-{mapping, "mqtt.session.max_inflight", "emqttd.session", [
+{mapping, "mqtt.session.max_inflight", "emqx.session", [
   {default, 100},
   {datatype, integer}
 ]}.
 
 %% @doc Retry interval for redelivering QoS1/2 messages.
-{mapping, "mqtt.session.retry_interval", "emqttd.session", [
+{mapping, "mqtt.session.retry_interval", "emqx.session", [
   {default, "20s"},
   {datatype, {duration, ms}}
 ]}.
 
 %% @doc Max Packets that Awaiting PUBREL, 0 means no limit
-{mapping, "mqtt.session.max_awaiting_rel", "emqttd.session", [
+{mapping, "mqtt.session.max_awaiting_rel", "emqx.session", [
   {default, 0},
   {datatype, integer}
 ]}.
 
 %% @doc Awaiting PUBREL Timeout
-{mapping, "mqtt.session.await_rel_timeout", "emqttd.session", [
+{mapping, "mqtt.session.await_rel_timeout", "emqx.session", [
   {default, "20s"},
   {datatype, {duration, ms}}
 ]}.
 
 %% @doc Enable Stats
-{mapping, "mqtt.session.enable_stats", "emqttd.session", [
+{mapping, "mqtt.session.enable_stats", "emqx.session", [
   {default, off},
-  {datatype, flag}
+  {datatype, [{duration, ms}, flag]}
 ]}.
 
-%% @doc Session Expiry Interval
-{mapping, "mqtt.session.expiry_interval", "emqttd.session", [
+%% @doc Session Expiry Time
+{mapping, "mqtt.session.expiry_interval", "emqx.session", [
   {default, "2h"},
   {datatype, {duration, ms}}
 ]}.
 
-%% @doc Ignore message from self publish
-{mapping, "mqtt.session.ignore_loop_deliver", "emqttd.session", [
-  {default, false},
-  {datatype, {enum, [true, false]}}
-]}.
-
-{translation, "emqttd.session", fun(Conf) ->
+{translation, "emqx.session", fun(Conf) ->
   [{max_subscriptions, cuttlefish:conf_get("mqtt.session.max_subscriptions", Conf)},
    {upgrade_qos,       cuttlefish:conf_get("mqtt.session.upgrade_qos", Conf)},
    {max_inflight,      cuttlefish:conf_get("mqtt.session.max_inflight", Conf)},
@@ -450,8 +463,7 @@ end}.
    {max_awaiting_rel,  cuttlefish:conf_get("mqtt.session.max_awaiting_rel", Conf)},
    {await_rel_timeout, cuttlefish:conf_get("mqtt.session.await_rel_timeout", Conf)},
    {enable_stats,      cuttlefish:conf_get("mqtt.session.enable_stats", Conf)},
-   {expiry_interval,   cuttlefish:conf_get("mqtt.session.expiry_interval", Conf)},
-   {ignore_loop_deliver, cuttlefish:conf_get("mqtt.session.ignore_loop_deliver", Conf)}]
+   {expiry_interval,   cuttlefish:conf_get("mqtt.session.expiry_interval", Conf)}]
 end}.
 
 %%--------------------------------------------------------------------
@@ -459,42 +471,42 @@ end}.
 %%--------------------------------------------------------------------
 
 %% @doc Type: simple | priority
-{mapping, "mqtt.mqueue.type", "emqttd.mqueue", [
+{mapping, "mqtt.mqueue.type", "emqx.mqueue", [
   {default, simple},
   {datatype, atom}
 ]}.
 
 %% @doc Topic Priority: 0~255, Default is 0
-{mapping, "mqtt.mqueue.priority", "emqttd.mqueue", [
+{mapping, "mqtt.mqueue.priority", "emqx.mqueue", [
   {default, ""},
   {datatype, string}
 ]}.
 
 %% @doc Max queue length. Enqueued messages when persistent client disconnected, or inflight window is full. 0 means no limit.
-{mapping, "mqtt.mqueue.max_length", "emqttd.mqueue", [
+{mapping, "mqtt.mqueue.max_length", "emqx.mqueue", [
   {default, 0},
   {datatype, integer}
 ]}.
 
 %% @doc Low-water mark of queued messages
-{mapping, "mqtt.mqueue.low_watermark", "emqttd.mqueue", [
+{mapping, "mqtt.mqueue.low_watermark", "emqx.mqueue", [
   {default, "20%"},
   {datatype, string}
 ]}.
 
 %% @doc High-water mark of queued messages
-{mapping, "mqtt.mqueue.high_watermark", "emqttd.mqueue", [
+{mapping, "mqtt.mqueue.high_watermark", "emqx.mqueue", [
   {default, "60%"},
   {datatype, string}
 ]}.
 
 %% @doc Queue Qos0 messages?
-{mapping, "mqtt.mqueue.store_qos0", "emqttd.mqueue", [
+{mapping, "mqtt.mqueue.store_qos0", "emqx.mqueue", [
   {default, true},
   {datatype, {enum, [true, false]}}
 ]}.
 
-{translation, "emqttd.mqueue", fun(Conf) ->
+{translation, "emqx.mqueue", fun(Conf) ->
   Parse = fun(S) ->
 			{match, [N]} = re:run(S, "^([0-9]+)%$", [{capture, all_but_first, list}]),
 			list_to_integer(N) / 100
@@ -517,7 +529,7 @@ end}.
 %% MQTT Broker
 %%--------------------------------------------------------------------
 
-{mapping, "mqtt.broker.sys_interval", "emqttd.broker_sys_interval", [
+{mapping, "mqtt.broker.sys_interval", "emqx.broker_sys_interval", [
   {default, 60},
   {datatype, integer}
 ]}.
@@ -526,22 +538,22 @@ end}.
 %% MQTT PubSub
 %%--------------------------------------------------------------------
 
-{mapping, "mqtt.pubsub.pool_size", "emqttd.pubsub", [
+{mapping, "mqtt.pubsub.pool_size", "emqx.pubsub", [
   {default, 8},
   {datatype, integer}
 ]}.
 
-{mapping, "mqtt.pubsub.by_clientid", "emqttd.pubsub", [
+{mapping, "mqtt.pubsub.by_clientid", "emqx.pubsub", [
   {default, true},
   {datatype, {enum, [true, false]}}
 ]}.
 
-{mapping, "mqtt.pubsub.async", "emqttd.pubsub", [
+{mapping, "mqtt.pubsub.async", "emqx.pubsub", [
   {default, true},
   {datatype, {enum, [true, false]}}
 ]}.
 
-{translation, "emqttd.pubsub", fun(Conf) ->
+{translation, "emqx.pubsub", fun(Conf) ->
   [{pool_size, cuttlefish:conf_get("mqtt.pubsub.pool_size", Conf)},
    {by_clientid, cuttlefish:conf_get("mqtt.pubsub.by_clientid", Conf)},
    {async, cuttlefish:conf_get("mqtt.pubsub.async", Conf)}]
@@ -551,17 +563,17 @@ end}.
 %% MQTT Bridge
 %%--------------------------------------------------------------------
 
-{mapping, "mqtt.bridge.max_queue_len", "emqttd.bridge", [
+{mapping, "mqtt.bridge.max_queue_len", "emqx.bridge", [
   {default, 10000},
   {datatype, integer}
 ]}.
 
-{mapping, "mqtt.bridge.ping_down_interval", "emqttd.bridge", [
+{mapping, "mqtt.bridge.ping_down_interval", "emqx.bridge", [
   {default, 1},
   {datatype, integer}
 ]}.
 
-{translation, "emqttd.bridge", fun(Conf) ->
+{translation, "emqx.bridge", fun(Conf) ->
   [{max_queue_len, cuttlefish:conf_get("mqtt.bridge.max_queue_len", Conf)},
    {ping_down_interval, cuttlefish:conf_get("mqtt.bridge.ping_down_interval", Conf)}]
 end}.
@@ -570,88 +582,78 @@ end}.
 %% MQTT Plugins
 %%-------------------------------------------------------------------
 
-{mapping, "mqtt.plugins.etc_dir", "emqttd.plugins_etc_dir", [
+{mapping, "mqtt.plugins.etc_dir", "emqx.plugins_etc_dir", [
   {datatype, string}
 ]}.
 
-{mapping, "mqtt.plugins.loaded_file", "emqttd.plugins_loaded_file", [
+{mapping, "mqtt.plugins.loaded_file", "emqx.plugins_loaded_file", [
   {datatype, string}
 ]}.
 
 %%--------------------------------------------------------------------
-%% MQTT Listeners
+%% Listeners
 %%--------------------------------------------------------------------
 
 %%--------------------------------------------------------------------
 %% TCP Listeners
 
-{mapping, "listener.tcp.$name", "emqttd.listeners", [
+{mapping, "listener.tcp.$name", "emqx.listeners", [
   {datatype, [integer, ip]}
 ]}.
 
-{mapping, "listener.tcp.$name.acceptors", "emqttd.listeners", [
+{mapping, "listener.tcp.$name.acceptors", "emqx.listeners", [
   {default, 8},
   {datatype, integer}
 ]}.
 
-{mapping, "listener.tcp.$name.max_clients", "emqttd.listeners", [
+{mapping, "listener.tcp.$name.max_clients", "emqx.listeners", [
   {default, 1024},
   {datatype, integer}
 ]}.
 
-{mapping, "listener.tcp.$name.zone", "emqttd.listeners", [
+{mapping, "listener.tcp.$name.zone", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.tcp.$name.mountpoint", "emqttd.listeners", [
+{mapping, "listener.tcp.$name.mountpoint", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.tcp.$name.rate_limit", "emqttd.listeners", [
+{mapping, "listener.tcp.$name.rate_limit", "emqx.listeners", [
   {default, undefined},
   {datatype, string}
 ]}.
 
-{mapping, "listener.tcp.$name.access.$id", "emqttd.listeners", [
+{mapping, "listener.tcp.$name.access.$id", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.tcp.$name.proxy_protocol", "emqttd.listeners", [
-  %%{default, off},
-  {datatype, flag}
-]}.
-
-{mapping, "listener.tcp.$name.proxy_protocol_timeout", "emqttd.listeners", [
-  %%{default, "5s"},
-  {datatype, {duration, ms}}
-]}.
-
-{mapping, "listener.tcp.$name.backlog", "emqttd.listeners", [
+{mapping, "listener.tcp.$name.backlog", "emqx.listeners", [
   {default, 1024},
   {datatype, integer}
 ]}.
 
-{mapping, "listener.tcp.$name.recbuf", "emqttd.listeners", [
+{mapping, "listener.tcp.$name.recbuf", "emqx.listeners", [
   {datatype, bytesize},
   hidden
 ]}.
 
-{mapping, "listener.tcp.$name.sndbuf", "emqttd.listeners", [
+{mapping, "listener.tcp.$name.sndbuf", "emqx.listeners", [
   {datatype, bytesize},
   hidden
 ]}.
 
-{mapping, "listener.tcp.$name.buffer", "emqttd.listeners", [
+{mapping, "listener.tcp.$name.buffer", "emqx.listeners", [
   {datatype, bytesize},
   hidden
 ]}.
 
-{mapping, "listener.tcp.$name.tune_buffer", "emqttd.listeners", [
+{mapping, "listener.tcp.$name.tune_buffer", "emqx.listeners", [
   {datatype, flag},
   hidden
 ]}.
 
-{mapping, "listener.tcp.$name.nodelay", "emqttd.listeners", [
+{mapping, "listener.tcp.$name.nodelay", "emqx.listeners", [
   {datatype, {enum, [true, false]}},
   hidden
 ]}.
@@ -659,279 +661,269 @@ end}.
 %%--------------------------------------------------------------------
 %% SSL Listeners
 
-{mapping, "listener.ssl.$name", "emqttd.listeners", [
+{mapping, "listener.ssl.$name", "emqx.listeners", [
   {datatype, [integer, ip]}
 ]}.
 
-{mapping, "listener.ssl.$name.acceptors", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.acceptors", "emqx.listeners", [
   {default, 8},
   {datatype, integer}
 ]}.
 
-{mapping, "listener.ssl.$name.max_clients", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.max_clients", "emqx.listeners", [
   {default, 1024},
   {datatype, integer}
 ]}.
 
-{mapping, "listener.ssl.$name.zone", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.zone", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.ssl.$name.mountpoint", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.mountpoint", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.ssl.$name.rate_limit", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.rate_limit", "emqx.listeners", [
   {default, undefined},
   {datatype, string}
 ]}.
 
-{mapping, "listener.ssl.$name.access.$id", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.access.$id", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.ssl.$name.proxy_protocol", "emqttd.listeners", [
-  %%{default, off},
-  {datatype, flag}
-]}.
-
-{mapping, "listener.ssl.$name.proxy_protocol_timeout", "emqttd.listeners", [
-  %%{default, "5s"},
-  {datatype, {duration, ms}}
-]}.
-
-{mapping, "listener.ssl.$name.backlog", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.backlog", "emqx.listeners", [
   {default, 1024},
   {datatype, integer}
 ]}.
 
-{mapping, "listener.ssl.$name.recbuf", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.recbuf", "emqx.listeners", [
   {datatype, bytesize},
   hidden
 ]}.
 
-{mapping, "listener.ssl.$name.sndbuf", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.sndbuf", "emqx.listeners", [
   {datatype, bytesize},
   hidden
 ]}.
 
-{mapping, "listener.ssl.$name.buffer", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.buffer", "emqx.listeners", [
   {datatype, bytesize},
   hidden
 ]}.
 
-{mapping, "listener.ssl.$name.tune_buffer", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.tune_buffer", "emqx.listeners", [
   {datatype, flag},
   hidden
 ]}.
 
-{mapping, "listener.ssl.$name.nodelay", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.nodelay", "emqx.listeners", [
   {datatype, {enum, [true, false]}},
   hidden
 ]}.
 
-{mapping, "listener.ssl.$name.tls_versions", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.tls_versions", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.ssl.$name.ciphers", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.ciphers", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.ssl.$name.handshake_timeout", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.handshake_timeout", "emqx.listeners", [
   {default, "15s"},
   {datatype, {duration, ms}}
 ]}.
 
-{mapping, "listener.ssl.$name.dhfile", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.dhfile", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.ssl.$name.keyfile", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.keyfile", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.ssl.$name.certfile", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.certfile", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.ssl.$name.cacertfile", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.cacertfile", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.ssl.$name.verify", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.verify", "emqx.listeners", [
   {datatype, atom}
 ]}.
 
-{mapping, "listener.ssl.$name.fail_if_no_peer_cert", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.fail_if_no_peer_cert", "emqx.listeners", [
   {datatype, {enum, [true, false]}}
 ]}.
 
-{mapping, "listener.ssl.$name.secure_renegotiate", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.secure_renegotiate", "emqx.listeners", [
   {datatype, flag}
 ]}.
 
-{mapping, "listener.ssl.$name.reuse_sessions", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.reuse_sessions", "emqx.listeners", [
   {default, on},
   {datatype, flag}
 ]}.
 
-{mapping, "listener.ssl.$name.honor_cipher_order", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.honor_cipher_order", "emqx.listeners", [
   {datatype, flag}
 ]}.
 
-{mapping, "listener.ssl.$name.peer_cert_as_username", "emqttd.listeners", [
+{mapping, "listener.ssl.$name.peer_cert_as_username", "emqx.listeners", [
   {datatype, {enum, [cn, dn]}}
 ]}.
 
 %%--------------------------------------------------------------------
-%% MQTT/WebSocket Listeners
+%% HTTP and WS Listeners
 
-{mapping, "listener.ws.$name", "emqttd.listeners", [
+{mapping, "listener.http.$name", "emqx.listeners", [
   {datatype, [integer, ip]}
 ]}.
 
-{mapping, "listener.ws.$name.acceptors", "emqttd.listeners", [
+{mapping, "listener.http.$name.acceptors", "emqx.listeners", [
   {default, 8},
   {datatype, integer}
 ]}.
 
-{mapping, "listener.ws.$name.max_clients", "emqttd.listeners", [
+{mapping, "listener.http.$name.max_clients", "emqx.listeners", [
   {default, 1024},
   {datatype, integer}
 ]}.
 
-{mapping, "listener.ws.$name.rate_limit", "emqttd.listeners", [
+{mapping, "listener.http.$name.rate_limit", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.ws.$name.zone", "emqttd.listeners", [
+{mapping, "listener.http.$name.zone", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.ws.$name.access.$id", "emqttd.listeners", [
+{mapping, "listener.http.$name.access.$id", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.ws.$name.backlog", "emqttd.listeners", [
+{mapping, "listener.http.$name.backlog", "emqx.listeners", [
   {default, 1024},
   {datatype, integer}
 ]}.
 
-{mapping, "listener.ws.$name.recbuf", "emqttd.listeners", [
+{mapping, "listener.http.$name.recbuf", "emqx.listeners", [
   {datatype, bytesize},
   hidden
 ]}.
 
-{mapping, "listener.ws.$name.sndbuf", "emqttd.listeners", [
+{mapping, "listener.http.$name.sndbuf", "emqx.listeners", [
   {datatype, bytesize},
   hidden
 ]}.
 
-{mapping, "listener.ws.$name.buffer", "emqttd.listeners", [
+{mapping, "listener.http.$name.buffer", "emqx.listeners", [
   {datatype, bytesize},
   hidden
 ]}.
 
-{mapping, "listener.ws.$name.tune_buffer", "emqttd.listeners", [
+{mapping, "listener.http.$name.tune_buffer", "emqx.listeners", [
   {datatype, flag},
   hidden
 ]}.
 
-{mapping, "listener.ws.$name.nodelay", "emqttd.listeners", [
+{mapping, "listener.http.$name.nodelay", "emqx.listeners", [
   {datatype, {enum, [true, false]}},
   hidden
 ]}.
 
 %%--------------------------------------------------------------------
-%% MQTT/WebSocket/SSL Listeners
+%% HTTPS and WSS Listeners
 
-{mapping, "listener.wss.$name", "emqttd.listeners", [
+{mapping, "listener.https.$name", "emqx.listeners", [
   {datatype, [integer, ip]}
 ]}.
 
-{mapping, "listener.wss.$name.acceptors", "emqttd.listeners", [
+{mapping, "listener.https.$name.acceptors", "emqx.listeners", [
   {default, 8},
   {datatype, integer}
 ]}.
 
-{mapping, "listener.wss.$name.max_clients", "emqttd.listeners", [
+{mapping, "listener.https.$name.max_clients", "emqx.listeners", [
   {default, 1024},
   {datatype, integer}
 ]}.
 
-{mapping, "listener.wss.$name.zone", "emqttd.listeners", [
+{mapping, "listener.https.$name.zone", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.wss.$name.mountpoint", "emqttd.listeners", [
+{mapping, "listener.https.$name.mountpoint", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.wss.$name.rate_limit", "emqttd.listeners", [
+{mapping, "listener.https.$name.rate_limit", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.wss.$name.access.$id", "emqttd.listeners", [
+{mapping, "listener.https.$name.access.$id", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.wss.$name.backlog", "emqttd.listeners", [
+{mapping, "listener.https.$name.backlog", "emqx.listeners", [
   {default, 1024},
   {datatype, integer}
 ]}.
 
-{mapping, "listener.wss.$name.recbuf", "emqttd.listeners", [
+{mapping, "listener.https.$name.recbuf", "emqx.listeners", [
   {datatype, bytesize},
   hidden
 ]}.
 
-{mapping, "listener.wss.$name.sndbuf", "emqttd.listeners", [
+{mapping, "listener.https.$name.sndbuf", "emqx.listeners", [
   {datatype, bytesize},
   hidden
 ]}.
 
-{mapping, "listener.wss.$name.buffer", "emqttd.listeners", [
+{mapping, "listener.https.$name.buffer", "emqx.listeners", [
   {datatype, bytesize},
   hidden
 ]}.
 
-{mapping, "listener.wss.$name.tune_buffer", "emqttd.listeners", [
+{mapping, "listener.https.$name.tune_buffer", "emqx.listeners", [
   {datatype, flag},
   hidden
 ]}.
 
-{mapping, "listener.wss.$name.nodelay", "emqttd.listeners", [
+{mapping, "listener.https.$name.nodelay", "emqx.listeners", [
   {datatype, {enum, [true, false]}},
   hidden
 ]}.
 
-{mapping, "listener.wss.$name.handshake_timeout", "emqttd.listeners", [
+{mapping, "listener.https.$name.handshake_timeout", "emqx.listeners", [
   {default, "15s"},
   {datatype, {duration, ms}}
 ]}.
 
-{mapping, "listener.wss.$name.keyfile", "emqttd.listeners", [
+{mapping, "listener.https.$name.keyfile", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.wss.$name.certfile", "emqttd.listeners", [
+{mapping, "listener.https.$name.certfile", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.wss.$name.cacertfile", "emqttd.listeners", [
+{mapping, "listener.https.$name.cacertfile", "emqx.listeners", [
   {datatype, string}
 ]}.
 
-{mapping, "listener.wss.$name.verify", "emqttd.listeners", [
+{mapping, "listener.https.$name.verify", "emqx.listeners", [
   {datatype, atom}
 ]}.
 
-{mapping, "listener.wss.$name.fail_if_no_peer_cert", "emqttd.listeners", [
+{mapping, "listener.https.$name.fail_if_no_peer_cert", "emqx.listeners", [
   {datatype, {enum, [true, false]}}
 ]}.
 
-{translation, "emqttd.listeners", fun(Conf) ->
+{translation, "emqx.listeners", fun(Conf) ->
 
     Filter  = fun(Opts) -> [{K, V} || {K, V} <- Opts, V =/= undefined] end,
 
@@ -954,8 +946,6 @@ end}.
     ConnOpts = fun(Prefix) ->
                    Filter([{zone, Atom(cuttlefish:conf_get(Prefix ++ ".zone", Conf, undefined))},
                            {rate_limit, cuttlefish:conf_get(Prefix ++ ".rate_limit", Conf, undefined)},
-                           {proxy_protocol, cuttlefish:conf_get(Prefix ++ ".proxy_protocol", Conf, undefined)},
-                           {proxy_protocol_timeout, cuttlefish:conf_get(Prefix ++ ".proxy_protocol_timeout", Conf, undefined)},
                            {mountpoint, MountPoint(cuttlefish:conf_get(Prefix ++ ".mountpoint", Conf, undefined))},
                            {peer_cert_as_username, cuttlefish:conf_get(Prefix ++ ".peer_cert_as_username", Conf, undefined)}])
                end,
@@ -982,7 +972,7 @@ end}.
                             end,
                   Filter([{versions, Versions},
                           {ciphers, SplitFun(cuttlefish:conf_get(Prefix ++ ".ciphers", Conf, undefined))},
-                          {handshake_timeout, cuttlefish:conf_get(Prefix ++ ".handshake_timeout", Conf, undefined)},
+                          {handshake_timeout, cuttlefish:conf_get(Prefix ++ ".handshake_timeout", Conf)},
                           {dhfile, cuttlefish:conf_get(Prefix ++ ".dhfile", Conf, undefined)},
                           {keyfile,    cuttlefish:conf_get(Prefix ++ ".keyfile", Conf, undefined)},
                           {certfile,   cuttlefish:conf_get(Prefix ++ ".certfile", Conf, undefined)},
@@ -1018,11 +1008,11 @@ end}.
 
     lists:flatten([TcpListeners(Type, Name) || {["listener", Type, Name], ListenOn}
                                                <- cuttlefish_variable:filter_by_prefix("listener.tcp", Conf)
-                                               ++ cuttlefish_variable:filter_by_prefix("listener.ws", Conf)]
+                                               ++ cuttlefish_variable:filter_by_prefix("listener.http", Conf)]
                   ++
                   [SslListeners(Type, Name) || {["listener", Type, Name], ListenOn}
                                                <- cuttlefish_variable:filter_by_prefix("listener.ssl", Conf)
-                                               ++ cuttlefish_variable:filter_by_prefix("listener.wss", Conf)])
+                                               ++ cuttlefish_variable:filter_by_prefix("listener.https", Conf)])
 end}.
 
 %%--------------------------------------------------------------------
@@ -1031,36 +1021,36 @@ end}.
 
 %% @doc Long GC, don't monitor in production mode for:
 %% https://github.com/erlang/otp/blob/feb45017da36be78d4c5784d758ede619fa7bfd3/erts/emulator/beam/erl_gc.c#L421
-{mapping, "sysmon.long_gc", "emqttd.sysmon", [
+{mapping, "sysmon.long_gc", "emqx.sysmon", [
   {default, false},
   {datatype, {enum, [true, false]}}
 ]}.
 
 %% @doc Long Schedule(ms)
-{mapping, "sysmon.long_schedule", "emqttd.sysmon", [
+{mapping, "sysmon.long_schedule", "emqx.sysmon", [
   {default, 1000},
   {datatype, integer}
 ]}.
 
 %% @doc Large Heap
-{mapping, "sysmon.large_heap", "emqttd.sysmon", [
+{mapping, "sysmon.large_heap", "emqx.sysmon", [
   {default, "8MB"},
   {datatype, bytesize}
 ]}.
 
 %% @doc Monitor Busy Port
-{mapping, "sysmon.busy_port", "emqttd.sysmon", [
+{mapping, "sysmon.busy_port", "emqx.sysmon", [
   {default, false},
   {datatype, {enum, [true, false]}}
 ]}.
 
 %% @doc Monitor Busy Dist Port
-{mapping, "sysmon.busy_dist_port", "emqttd.sysmon", [
+{mapping, "sysmon.busy_dist_port", "emqx.sysmon", [
   {default, true},
   {datatype, {enum, [true, false]}}
 ]}.
 
-{translation, "emqttd.sysmon", fun(Conf) ->
+{translation, "emqx.sysmon", fun(Conf) ->
     [{long_gc, cuttlefish:conf_get("sysmon.long_gc", Conf)},
      {long_schedule, cuttlefish:conf_get("sysmon.long_schedule", Conf)},
      {large_heap, cuttlefish:conf_get("sysmon.large_heap", Conf)},

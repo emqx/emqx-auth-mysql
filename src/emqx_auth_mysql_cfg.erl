@@ -14,9 +14,9 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module (emq_auth_mysql_config).
+-module (emqx_auth_mysql_cfg).
 
--include("emq_auth_mysql.hrl").
+-include("emqx_auth_mysql.hrl").
 
 -export ([register/0, unregister/0]).
 
@@ -132,3 +132,4 @@ parse_servers(Value) ->
         [Domain]       -> {Domain, 3306};
         [Domain, Port] -> {Domain, list_to_integer(Port)}
     end.
+

@@ -14,15 +14,15 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(emq_auth_mysql_SUITE).
+-module(emqx_auth_mysql_SUITE).
 
 -compile(export_all).
 
--define(PID, emq_auth_mysql).
+-define(PID, emqx_auth_mysql).
 
 -define(APP, ?PID).
 
--include_lib("emqttd/include/emqttd.hrl").
+-include_lib("emqx/include/emqx.hrl").
 
 -include_lib("eunit/include/eunit.hrl").
 
@@ -71,48 +71,45 @@
                              "(6, false, 'bcrypt_foo', '$2a$12$sSS8Eg.ovVzaHzi1nUHYK.HbUIOdlQI0iS22Q5rd5z.JVVYH6sfm6', '$2a$12$sSS8Eg.ovVzaHzi1nUHYK.')">>).
 
 all() -> 
-    [{group, emq_auth_mysql_auth},
-     {group, emq_auth_mysql_acl},
-     {group, emq_auth_mysql},
-     {group, auth_mysql_config}].
+    [{group, emqx_auth_mysql_auth},
+     {group, emqx_auth_mysql_acl},
+     {group, emqx_auth_mysql},
+     {group, auth_mysql_cfg}].
 
 groups() ->
-    [{emq_auth_mysql_auth, [sequence],
-     [check_auth, list_auth]},
-    {emq_auth_mysql_acl, [sequence],
-     [check_acl, acl_super]},
-    {emq_auth_mysql, [sequence],
-     [comment_config]},
-    {auth_mysql_config, [sequence], [server_config]}
+    [{emqx_auth_mysql_auth, [sequence], [check_auth, list_auth]},
+     {emqx_auth_mysql_acl, [sequence], [check_acl, acl_super]},
+     {emqx_auth_mysql, [sequence], [comment_config]},
+     {auth_mysql_cfg, [sequence], [server_config]}
     ].
 
 init_per_suite(Config) ->
     DataDir = proplists:get_value(data_dir, Config),
-    [start_apps(App, DataDir) || App <- [emqttd, emq_auth_mysql]],
+    [start_apps(App, DataDir) || App <- [emqx, emqx_auth_mysql]],
     Config.
 
 end_per_suite(_Config) ->
     drop_table_(?DROP_AUTH_TABLE),
     drop_table_(?DROP_ACL_TABLE),
-    application:stop(emq_auth_mysql),
-    application:stop(emqttd).
+    application:stop(emqx_auth_mysql),
+    application:stop(emqx).
 
 check_acl(_) ->
     init_acl_(),
     User1 = #mqtt_client{peername = {{127,0,0,1}, 1}, client_id = <<"c1">>, username = <<"u1">>},
     User2 = #mqtt_client{peername = {{127,0,0,1}, 1}, client_id = <<"c2">>, username = <<"u2">>},
-    allow = emqttd_access_control:check_acl(User1, subscribe, <<"t1">>),
-    deny = emqttd_access_control:check_acl(User2, subscribe, <<"t1">>),
+    allow = emqx_access_control:check_acl(User1, subscribe, <<"t1">>),
+    deny = emqx_access_control:check_acl(User2, subscribe, <<"t1">>),
     
     User3 = #mqtt_client{peername = {{10,10,0,110}, 1}, client_id = <<"c1">>, username = <<"u1">>},
     User4 = #mqtt_client{peername = {{10,10,10,110}, 1}, client_id = <<"c1">>, username = <<"u1">>},
-    allow = emqttd_access_control:check_acl(User3, subscribe, <<"t1">>),
-    allow = emqttd_access_control:check_acl(User3, subscribe, <<"t1">>),
-    allow = emqttd_access_control:check_acl(User3, subscribe, <<"t2">>),%% nomatch -> ignore -> emqttd acl
-    allow = emqttd_access_control:check_acl(User4, subscribe, <<"t1">>),%% nomatch -> ignore -> emqttd acl
+    allow = emqx_access_control:check_acl(User3, subscribe, <<"t1">>),
+    allow = emqx_access_control:check_acl(User3, subscribe, <<"t1">>),
+    allow = emqx_access_control:check_acl(User3, subscribe, <<"t2">>),%% nomatch -> ignore -> emqx acl
+    allow = emqx_access_control:check_acl(User4, subscribe, <<"t1">>),%% nomatch -> ignore -> emqx acl
     User5 = #mqtt_client{peername = {{127,0,0,1}, 1}, client_id = <<"c3">>, username = <<"u3">>},
-    allow = emqttd_access_control:check_acl(User5, subscribe, <<"t1">>),
-    allow = emqttd_access_control:check_acl(User5, publish, <<"t1">>).
+    allow = emqx_access_control:check_acl(User5, subscribe, <<"t1">>),
+    allow = emqx_access_control:check_acl(User5, publish, <<"t1">>).
 
 acl_super(_Config) ->
     reload([{password_hash, plain}]),
@@ -148,36 +145,36 @@ check_auth(_) ->
     Bcrypt = #mqtt_client{client_id = <<"bcrypt_foo">>, username = <<"bcrypt_foo">>},
     User1 = #mqtt_client{client_id = <<"bcrypt_foo">>, username = <<"user">>},
     reload([{password_hash, plain}]),
-    {ok, true} = emqttd_access_control:auth(Plain, <<"plain">>),
+    {ok, true} = emqx_access_control:auth(Plain, <<"plain">>),
     reload([{password_hash, md5}]),
-    {ok, false} = emqttd_access_control:auth(Md5, <<"md5">>),
+    {ok, false} = emqx_access_control:auth(Md5, <<"md5">>),
     reload([{password_hash, sha}]),
-    {ok, false} = emqttd_access_control:auth(Sha, <<"sha">>),
+    {ok, false} = emqx_access_control:auth(Sha, <<"sha">>),
     reload([{password_hash, sha256}]),
-    {ok, false} = emqttd_access_control:auth(Sha256, <<"sha256">>),
+    {ok, false} = emqx_access_control:auth(Sha256, <<"sha256">>),
     %%pbkdf2 sha
     reload([{password_hash, {pbkdf2, sha, 1, 16}}, {auth_query, "select password, salt from mqtt_user where username = '%u' limit 1"}]),
-    {ok, false} = emqttd_access_control:auth(Pbkdf2, <<"password">>),
+    {ok, false} = emqx_access_control:auth(Pbkdf2, <<"password">>),
     reload([{password_hash, {salt, bcrypt}}]),
-    {ok, false} = emqttd_access_control:auth(Bcrypt, <<"foo">>),
-    ok = emqttd_access_control:auth(User1, <<"foo">>).
+    {ok, false} = emqx_access_control:auth(Bcrypt, <<"foo">>),
+    ok = emqx_access_control:auth(User1, <<"foo">>).
 
 list_auth(_Config) ->
-    application:start(emq_auth_username),
-    emq_auth_username:add_user(<<"user1">>, <<"password1">>),
+    application:start(emqx_auth_username),
+    emqx_auth_username:add_user(<<"user1">>, <<"password1">>),
     User1 = #mqtt_client{client_id = <<"client1">>, username = <<"user1">>},
-    ok = emqttd_access_control:auth(User1, <<"password1">>),
+    ok = emqx_access_control:auth(User1, <<"password1">>),
     reload([{password_hash, plain}, {auth_query, "select password from mqtt_user where username = '%u' limit 1"}]),
     Plain = #mqtt_client{client_id = <<"client1">>, username = <<"plain">>},
-    {ok, true} = emqttd_access_control:auth(Plain, <<"plain">>),
-    application:stop(emq_auth_username).
+    {ok, true} = emqx_access_control:auth(Plain, <<"plain">>),
+    application:stop(emqx_auth_username).
 
 comment_config(_) ->
     application:stop(?APP),
     [application:unset_env(?APP, Par) || Par <- [acl_query, auth_query]],
     application:start(?APP),
-    ?assertEqual([], emqttd_access_control:lookup_mods(auth)),
-    ?assertEqual([], emqttd_access_control:lookup_mods(acl)).
+    ?assertEqual([], emqx_access_control:lookup_mods(auth)),
+    ?assertEqual([], emqx_access_control:lookup_mods(acl)).
 
 server_config(_) ->
     I = [{host, "localhost"},
@@ -196,13 +193,13 @@ server_config(_) ->
                      "database=sercrit",
                      "password_hash=sha256,salt"],
     lists:foreach(fun set_cmd/1, SetConfigKeys),
-    {ok, E} =  application:get_env(emq_auth_mysql, server),
-    {ok, Hash} =  application:get_env(emq_auth_mysql, password_hash),
+    {ok, E} = application:get_env(emqx_auth_mysql, server),
+    {ok, Hash} = application:get_env(emqx_auth_mysql, password_hash),
     ?assertEqual(lists:sort(I), lists:sort(E)),
     ?assertEqual({sha256,salt}, Hash).
 
 set_cmd(Key) ->
-    emqttd_cli_config:run(["config", "set", string:join(["auth.mysql", Key], "."), "--app=emq_auth_mysql"]).
+    emqx_cli_config:run(["config", "set", string:join(["auth.mysql", Key], "."), "--app=emqx_auth_mysql"]).
 
 init_auth_() ->
     {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),

@@ -14,12 +14,11 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc ACL with MySQL Database
--module(emq_acl_mysql).
+-module(emqx_acl_mysql).
 
--behaviour(emqttd_acl_mod).
+-behaviour(emqx_acl_mod).
 
--include_lib("emqttd/include/emqttd.hrl").
+-include_lib("emqx/include/emqx.hrl").
 
 %% ACL Callbacks
 -export([init/1, check_acl/2, reload_acl/1, description/0]).
@@ -32,8 +31,8 @@ init(AclQuery) ->
 check_acl({#mqtt_client{username = <<$$, _/binary>>}, _PubSub, _Topic}, _State) ->
     ignore; 
 
-check_acl({Client, PubSub, Topic}, #state{acl_query   = {AclSql, AclParams}}) ->
-    case emq_auth_mysql_cli:query(AclSql, AclParams, Client) of
+check_acl({Client, PubSub, Topic}, #state{acl_query = {AclSql, AclParams}}) ->
+    case emqx_auth_mysql_cli:query(AclSql, AclParams, Client) of
         {ok, _Columns, []} ->
             ignore;
         {ok, _Columns, Rows} ->
@@ -52,7 +51,7 @@ match(_Client, _Topic, []) ->
     nomatch;
 
 match(Client, Topic, [Rule|Rules]) ->
-    case emqttd_access_rule:match(Client, Topic, Rule) of
+    case emqx_access_rule:match(Client, Topic, Rule) of
         nomatch -> match(Client, Topic, Rules);
         {matched, AllowDeny} -> {matched, AllowDeny}
     end.
@@ -67,7 +66,7 @@ compile([], Acc) ->
 compile([[Allow, IpAddr, Username, ClientId, Access, Topic]|T], Acc) ->
     Who  = who(IpAddr, Username, ClientId),
     Term = {allow(Allow), Who, access(Access), [topic(Topic)]},
-    compile(T, [emqttd_access_rule:compile(Term) | Acc]).
+    compile(T, [emqx_access_rule:compile(Term) | Acc]).
 
 who(_, <<"$all">>, _) ->
     all;
