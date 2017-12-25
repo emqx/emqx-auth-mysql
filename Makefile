@@ -1,10 +1,10 @@
 PROJECT = emq_auth_mysql
 PROJECT_DESCRIPTION = Authentication/ACL with MySQL
-PROJECT_VERSION = 2.3.1
+PROJECT_VERSION = 2.3.2
 
 DEPS = mysql ecpool clique
 
-dep_mysql  = git https://github.com/mysql-otp/mysql-otp 1.2.0
+dep_mysql  = git https://github.com/emqtt/mysql-otp master
 dep_ecpool = git https://github.com/emqtt/ecpool master
 dep_clique = git https://github.com/emqtt/clique
 
