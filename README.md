@@ -2,7 +2,7 @@
 emq-auth-mysql
 ==============
 
-Authentication, ACL with MySQL Database
+Authentication, ACL with MySQL Database.
 
 Notice: changed mysql driver to [mysql-otp](https://github.com/mysql-otp/mysql-otp).
 
@@ -17,31 +17,53 @@ Configure Plugin
 File: etc/emq_auth_mysql.conf
 
 ```
-## Mysql Server
+## MySQL server address.
+##
+## Value: Port | IP:Port
+##
+## Examples: 3306, 127.0.0.1:3306, localhost:3306
 auth.mysql.server = 127.0.0.1:3306
 
-## Mysql Pool Size
+## MySQL pool size.
+##
+## Value: Number
 auth.mysql.pool = 8
 
-## Mysql Username
+## MySQL username.
+##
+## Value: String
 ## auth.mysql.username =
 
-## Mysql Password
+## MySQL Password.
+##
+## Value: String
 ## auth.mysql.password =
 
-## Mysql Database
+## MySQL database.
+##
+## Value: String
 auth.mysql.database = mqtt
 
 ## Variables: %u = username, %c = clientid
 
-## Authentication Query: select password or password, salt
+## Authentication query.
+##
+## Note that column names should be 'password' and 'salt' (if used).
+## In case column names differ in your DB - please use aliases,
+## e.g. "my_column_name as password".
+##
+## Value: SQL
+##
+## Variables:
+##  - %u: username
+##  - %c: clientid
+##
 auth.mysql.auth_query = select password from mqtt_user where username = '%u' limit 1
-
-## Note: column names should be "password" and "salt" (if used). In case column
-## names differ in your DB - please use aliases, e.g. "my_column_name as password".
 ## auth.mysql.auth_query = select password_hash as password from mqtt_user where username = '%u' limit 1
 
-## Password hash: plain, md5, sha, sha256, bcrypt
+## Password hash.
+##
+## Value: plain | md5 | sha | sha256 | bcrypt
 auth.mysql.password_hash = sha256
 
 ## sha256 with salt prefix
@@ -57,11 +79,25 @@ auth.mysql.password_hash = sha256
 ## macfun: md4, md5, ripemd160, sha, sha224, sha256, sha384, sha512
 ## auth.mysql.password_hash = pbkdf2,sha256,1000,20
 
-## %% Superuser Query
+## Superuser query.
+##
+## Value: SQL
+##
+## Variables:
+##  - %u: username
+##  - %c: clientid
 auth.mysql.super_query = select is_superuser from mqtt_user where username = '%u' limit 1
 
-## ACL Query Command
+## ACL query.
+##
+## Value: SQL
+##
+## Variables:
+##  - %a: ipaddr
+##  - %u: username
+##  - %c: clientid
 auth.mysql.acl_query = select allow, ipaddr, username, clientid, access, topic from mqtt_acl where ipaddr = '%a' or username = '%u' or username = '$all' or clientid = '%c'
+
 ```
 
 Import mqtt.sql
