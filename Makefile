@@ -1,10 +1,12 @@
+.PHONY: app tests
+
 PROJECT = emqx_auth_mysql
 PROJECT_DESCRIPTION = EMQ X Authentication/ACL with MySQL
-PROJECT_VERSION = 2.4
+PROJECT_VERSION = 2.4.1
 
 DEPS = mysql ecpool clique
 
-dep_mysql  = git https://github.com/emqtt/mysql-otp master
+dep_mysql  = git https://github.com/mysql-otp/mysql-otp master
 dep_ecpool = git https://github.com/emqtt/ecpool master
 dep_clique = git https://github.com/emqtt/clique
 
@@ -17,9 +19,9 @@ NO_AUTOPATCH = cuttlefish
 ERLC_OPTS += +debug_info
 ERLC_OPTS += +'{parse_transform, lager_transform}'
 
-TEST_DEPS = emqttc emq_auth_username
+TEST_DEPS = emqttc emqx_auth_username
 dep_emqttc = git https://github.com/emqtt/emqttc
-dep_emqx_auth_username = git https://github.com/emqtt/emq-auth-username X
+dep_emqx_auth_username = git https://github.com/emqtt/emq-auth-username enterprise
 
 TEST_ERLC_OPTS += +debug_info
 TEST_ERLC_OPTS += +'{parse_transform, lager_transform}'
