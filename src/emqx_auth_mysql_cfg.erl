@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2013-2017 EMQ Enterprise, Inc. (http://emqtt.io)
+%% Copyright (c) 2013-2018 EMQ Enterprise, Inc. (http://emqtt.io)
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -132,4 +132,3 @@ parse_servers(Value) ->
         [Domain]       -> {Domain, 3306};
         [Domain, Port] -> {Domain, list_to_integer(Port)}
     end.
-
