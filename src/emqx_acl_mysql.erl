@@ -1,5 +1,4 @@
-%%--------------------------------------------------------------------
-%% Copyright (c) 2013-2018 EMQ Enterprise, Inc. (http://emqtt.io)
+%% Copyright (c) 2018 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -12,7 +11,6 @@
 %% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
-%%--------------------------------------------------------------------
 
 -module(emqx_acl_mysql).
 
@@ -29,12 +27,11 @@ init(AclQuery) ->
     {ok, #state{acl_query = AclQuery}}.
 
 check_acl({#mqtt_client{username = <<$$, _/binary>>}, _PubSub, _Topic}, _State) ->
-    ignore; 
+    ignore;
 
 check_acl({Client, PubSub, Topic}, #state{acl_query = {AclSql, AclParams}}) ->
     case emqx_auth_mysql_cli:query(AclSql, AclParams, Client) of
-        {ok, _Columns, []} ->
-            ignore;
+        {ok, _Columns, []} -> ignore;
         {ok, _Columns, Rows} ->
             Rules = filter(PubSub, compile(Rows)),
             case match(Client, Topic, Rules) of
