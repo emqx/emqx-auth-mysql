@@ -2,7 +2,7 @@
 
 PROJECT = emqx_auth_mysql
 PROJECT_DESCRIPTION = EMQ X Authentication/ACL with MySQL
-PROJECT_VERSION = 2.4.2
+PROJECT_VERSION = 2.4.3
 
 DEPS = mysql ecpool clique
 
