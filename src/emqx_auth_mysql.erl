@@ -29,7 +29,7 @@
 init({AuthQuery, SuperQuery, HashType}) ->
     {ok, #state{auth_query = AuthQuery, super_query = SuperQuery, hash_type = HashType}}.
 
-check(#mqtt_client{username = Username}, Password, _State) when ?EMPTY(Username); ?EMPTY(Password) ->
+check(#{username := Username}, Password, _State) when ?EMPTY(Username); ?EMPTY(Password) ->
     {error, username_or_password_undefined};
 
 check(Client, Password, #state{auth_query  = {AuthSql, AuthParams},
@@ -64,4 +64,3 @@ check_pass(_, _)               -> {error, password_error}.
 description() -> "Authentication with MySQL".
 
 hash(Type, Password) -> emqx_auth_mod:passwd_hash(Type, Password).
-

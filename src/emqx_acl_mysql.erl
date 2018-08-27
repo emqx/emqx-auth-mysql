@@ -26,7 +26,7 @@
 init(AclQuery) ->
     {ok, #state{acl_query = AclQuery}}.
 
-check_acl({#mqtt_client{username = <<$$, _/binary>>}, _PubSub, _Topic}, _State) ->
+check_acl({#{username := <<$$, _/binary>>}, _PubSub, _Topic}, _State) ->
     ignore;
 
 check_acl({Client, PubSub, Topic}, #state{acl_query = {AclSql, AclParams}}) ->
@@ -106,4 +106,3 @@ empty(null) -> true;
 empty("")   -> true;
 empty(<<>>) -> true;
 empty(_)    -> false.
-
