@@ -63,4 +63,4 @@ check_pass(_, _)               -> {error, password_error}.
 
 description() -> "Authentication with MySQL".
 
-hash(Type, Password) -> emqx_auth_mod:passwd_hash(Type, Password).
+hash(Type, Password) -> emqx_passwd:hash(Type, Password).
