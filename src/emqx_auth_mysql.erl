@@ -78,6 +78,5 @@ check_pass(PassHash, Salt, Password, {HashType, salt}) ->
 check_pass(PassHash, PassHash) -> ok;
 check_pass(_Hash1, _Hash2)     -> {error, password_error}.
 
-description() ->
-    "Authentication with MySQL".
+description() -> "Authentication with MySQL".
 
