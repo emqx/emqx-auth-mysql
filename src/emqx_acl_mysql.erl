@@ -26,15 +26,15 @@
 init(AclQuery) ->
     {ok, #state{acl_query = AclQuery}}.
 
-check_acl({#mqtt_client{username = <<$$, _/binary>>}, _PubSub, _Topic}, _State) ->
+check_acl({#{username := <<$$, _/binary>>}, _PubSub, _Topic}, _State) ->
     ignore;
 
-check_acl({Client, PubSub, Topic}, #state{acl_query = {AclSql, AclParams}}) ->
-    case emqx_auth_mysql_cli:query(AclSql, AclParams, Client) of
+check_acl({Credentials, PubSub, Topic}, #state{acl_query = {AclSql, AclParams}}) ->
+    case emqx_auth_mysql_cli:query(AclSql, AclParams, Credentials) of
         {ok, _Columns, []} -> ignore;
         {ok, _Columns, Rows} ->
             Rules = filter(PubSub, compile(Rows)),
-            case match(Client, Topic, Rules) of
+            case match(Credentials, Topic, Rules) of
                 {matched, allow} -> allow;
                 {matched, deny}  -> deny;
                 nomatch          -> ignore
@@ -44,17 +44,20 @@ check_acl({Client, PubSub, Topic}, #state{acl_query = {AclSql, AclParams}}) ->
             ignore
     end.
 
-match(_Client, _Topic, []) ->
+match(_Credentials, _Topic, []) ->
     nomatch;
 
-match(Client, Topic, [Rule|Rules]) ->
-    case emqx_access_rule:match(Client, Topic, Rule) of
-        nomatch -> match(Client, Topic, Rules);
-        {matched, AllowDeny} -> {matched, AllowDeny}
+match(Credentials, Topic, [Rule|Rules]) ->
+    case emqx_access_rule:match(Credentials, Topic, Rule) of
+        nomatch ->
+            match(Credentials, Topic, Rules);
+        {matched, AllowDeny} ->
+            {matched, AllowDeny}
     end.
 
 filter(PubSub, Rules) ->
-    [Term || Term = {_, _, Access, _} <- Rules, Access =:= PubSub orelse Access =:= pubsub].
+    [Term || Term = {_, _, Access, _} <- Rules,
+             Access =:= PubSub orelse Access =:= pubsub].
 
 compile(Rows) ->
     compile(Rows, []).

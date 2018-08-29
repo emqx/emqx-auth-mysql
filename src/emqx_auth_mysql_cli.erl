@@ -17,29 +17,11 @@
 -behaviour(ecpool_worker).
 
 -include("emqx_auth_mysql.hrl").
-
 -include_lib("emqx/include/emqx.hrl").
 
--export([is_superuser/2, parse_query/1, connect/1, query/3]).
-
-%%--------------------------------------------------------------------
-%% Is Superuser?
-%%--------------------------------------------------------------------
-
--spec(is_superuser(undefined | {string(), list()}, mqtt_client()) -> boolean()).
-is_superuser(undefined, _Client) ->
-    false;
-is_superuser({SuperSql, Params}, Client) ->
-    case query(SuperSql, Params, Client) of
-        {ok, [_Super], [[1]]} ->
-            true;
-        {ok, [_Super], [[_False]]} ->
-            false;
-        {ok, [_Super], []} ->
-            false;
-        {error, _Error} ->
-            false
-    end.
+-export([parse_query/1]).
+-export([connect/1]).
+-export([query/3]).
 
 %%--------------------------------------------------------------------
 %% Avoid SQL Injection: Parse SQL to Parameter Query.
@@ -63,20 +45,20 @@ parse_query(Sql) ->
 connect(Options) ->
     mysql:start_link(Options).
 
-query(Sql, Params, Client) ->
-    ecpool:with_client(?APP, fun(C) -> mysql:query(C, Sql, replvar(Params, Client)) end).
+query(Sql, Params, Credentials) ->
+    ecpool:with_client(?APP, fun(C) -> mysql:query(C, Sql, replvar(Params, Credentials)) end).
 
-replvar(Params, Client) ->
-    replvar(Params, Client, []).
+replvar(Params, Credentials) ->
+    replvar(Params, Credentials, []).
 
-replvar([], _Client, Acc) ->
+replvar([], _Credentials, Acc) ->
     lists:reverse(Acc);
-replvar(["'%u'" | Params], Client = #mqtt_client{username = Username}, Acc) ->
-    replvar(Params, Client, [Username | Acc]);
-replvar(["'%c'" | Params], Client = #mqtt_client{client_id = ClientId}, Acc) ->
-    replvar(Params, Client, [ClientId | Acc]);
-replvar(["'%a'" | Params], Client = #mqtt_client{peername = {IpAddr, _}}, Acc) ->
-    replvar(Params, Client, [inet_parse:ntoa(IpAddr) | Acc]);
-replvar([Param | Params], Client, Acc) ->
-    replvar(Params, Client, [Param | Acc]).
+replvar(["'%u'" | Params], Credentials = #{username := Username}, Acc) ->
+    replvar(Params, Credentials, [Username | Acc]);
+replvar(["'%c'" | Params], Credentials = #{client_id := ClientId}, Acc) ->
+    replvar(Params, Credentials, [ClientId | Acc]);
+replvar(["'%a'" | Params], Credentials = #{peername := {IpAddr, _}}, Acc) ->
+    replvar(Params, Credentials, [inet_parse:ntoa(IpAddr) | Acc]);
+replvar([Param | Params], Credentials, Acc) ->
+    replvar(Params, Credentials, [Param | Acc]).
 

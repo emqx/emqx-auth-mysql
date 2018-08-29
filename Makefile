@@ -4,11 +4,12 @@ PROJECT = emqx_auth_mysql
 PROJECT_DESCRIPTION = EMQ X Authentication/ACL with MySQL
 PROJECT_VERSION = 3.0
 
-DEPS = mysql ecpool clique
+DEPS = mysql ecpool clique emqx_passwd
 
-dep_mysql  = git https://github.com/mysql-otp/mysql-otp 1.3.2
-dep_ecpool = git https://github.com/emqtt/ecpool master
-dep_clique = git https://github.com/emqtt/clique
+dep_mysql       = git https://github.com/mysql-otp/mysql-otp 1.3.2
+dep_ecpool      = git https://github.com/emqx/ecpool master
+dep_clique      = git https://github.com/emqx/clique
+dep_emqx_passwd = git https://github.com/emqx/emqx-passwd emqx30
 
 BUILD_DEPS = emqx cuttlefish
 dep_emqx = git https://github.com/emqtt/emqttd emqx30
