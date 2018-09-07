@@ -11,7 +11,8 @@ dep_ecpool      = git https://github.com/emqx/ecpool master
 dep_clique      = git https://github.com/emqx/clique
 dep_emqx_passwd = git https://github.com/emqx/emqx-passwd emqx30
 
-BUILD_DEPS = emqx cuttlefish
+BUILD_DEPS = goldrush emqx cuttlefish
+dep_goldrush = git https://github.com/basho/goldrush 0.1.9
 dep_emqx = git https://github.com/emqtt/emqttd emqx30
 dep_cuttlefish = git https://github.com/emqtt/cuttlefish emqx30
 
