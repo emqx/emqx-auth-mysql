@@ -35,9 +35,9 @@ check(Credentials, Password, #state{auth_query  = {AuthSql, AuthParams},
                                     hash_type   = HashType}) ->
     Result = case emqx_auth_mysql_cli:query(AuthSql, AuthParams, Credentials) of
                  {ok, [<<"password">>], [[PassHash]]} ->
-                     check_pass(PassHash, Password, HashType);
+                     emqx_passwd:check_pass({PassHash, Password}, HashType);
                  {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
-                     check_pass(PassHash, Salt, Password, HashType);
+                     emqx_passwd:check_pass({PassHash, Salt, Password}, HashType);
                  {ok, _Columns, []} ->
                      ignore;
                  {error, Reason} ->
@@ -63,20 +63,6 @@ is_superuser({SuperSql, Params}, Credentials) ->
         {error, _Error} ->
             false
     end.
-
-check_pass(PassHash, Password, HashType) ->
-    check_pass(PassHash, emqx_passwd:hash(HashType, Password)).
-check_pass(PassHash, Salt, Password, {pbkdf2, Macfun, Iterations, Dklen}) ->
-    check_pass(PassHash, emqx_passwd:hash(pbkdf2, {Salt, Password, Macfun, Iterations, Dklen}));
-check_pass(PassHash, Salt, Password, {salt, bcrypt}) ->
-    check_pass(PassHash, emqx_passwd:hash(bcrypt, {Salt, Password}));
-check_pass(PassHash, Salt, Password, {salt, HashType}) ->
-    check_pass(PassHash, emqx_passwd:hash(HashType, <<Salt/binary, Password/binary>>));
-check_pass(PassHash, Salt, Password, {HashType, salt}) ->
-    check_pass(PassHash, emqx_passwd:hash(HashType, <<Password/binary, Salt/binary>>)).
-
-check_pass(PassHash, PassHash) -> ok;
-check_pass(_Hash1, _Hash2)     -> {error, password_error}.
 
 description() -> "Authentication with MySQL".
 
