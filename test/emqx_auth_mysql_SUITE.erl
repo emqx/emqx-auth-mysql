@@ -67,7 +67,8 @@
                              "(4, false, 'sha256', '5d5b09f6dcb2d53a5fffc60c4ac0d55fabdf556069d6631545f42aa6e3500f2e', 'salt'),"
                              "(5, false, 'pbkdf2_password', 'cdedb5281bb2f801565a1122b2563515', 'ATHENA.MIT.EDUraeburn'),"
                              "(6, false, 'bcrypt_foo', '$2a$12$sSS8Eg.ovVzaHzi1nUHYK.HbUIOdlQI0iS22Q5rd5z.JVVYH6sfm6', '$2a$12$sSS8Eg.ovVzaHzi1nUHYK.'),"
-							               "(7, false, 'bcrypt', '$2y$16$rEVsDarhgHYB0TGnDFJzyu5f.T.Ha9iXMTk9J36NCMWWM7O16qyaK', 'salt')">>).
+			     "(7, false, 'bcrypt', '$2y$16$rEVsDarhgHYB0TGnDFJzyu5f.T.Ha9iXMTk9J36NCMWWM7O16qyaK', 'salt'),"
+                             "(8, false, 'bcrypt_wrong', '$2y$16$rEVsDarhgHYB0TGnDFJzyu', 'salt')">>).
 
 all() ->
     [{group, emqx_auth_mysql_auth},
@@ -147,7 +148,8 @@ check_auth(_) ->
     Pbkdf2 = #{client_id => <<"pbkdf2_password">>, username => <<"pbkdf2_password">>},
     BcryptFoo = #{client_id => <<"bcrypt_foo">>, username => <<"bcrypt_foo">>},
     User1 = #{client_id => <<"bcrypt_foo">>, username => <<"user">>},
- 	  Bcrypt = #{client_id => <<"bcrypt">>, username => <<"bcrypt">>},
+    Bcrypt = #{client_id => <<"bcrypt">>, username => <<"bcrypt">>},
+    BcryptWrong = #{client_id => <<"bcrypt_wrong">>, username => <<"bcrypt_wrong">>},
     reload([{password_hash, plain}]),
     {ok,#{is_superuser := true}} = emqx_access_control:authenticate(Plain, <<"plain">>),
     reload([{password_hash, md5}]),
@@ -156,15 +158,16 @@ check_auth(_) ->
     {ok,#{is_superuser := false}} = emqx_access_control:authenticate(Sha, <<"sha">>),
     reload([{password_hash, sha256}]),
     {ok,#{is_superuser := false}} = emqx_access_control:authenticate(Sha256, <<"sha256">>),
-	  reload([{password_hash, bcrypt}]),
+    reload([{password_hash, bcrypt}]),
     {ok,#{is_superuser := false}} = emqx_access_control:authenticate(Bcrypt, <<"password">>),
+    {error,password_error} = emqx_access_control:authenticate(BcryptWrong, <<"password">>),
     %%pbkdf2 sha
     reload([{password_hash, {pbkdf2, sha, 1, 16}}, {auth_query, "select password, salt from mqtt_user_test where username = '%u' limit 1"}]),
     {ok,#{is_superuser := false}} = emqx_access_control:authenticate(Pbkdf2, <<"password">>),
     reload([{password_hash, {salt, bcrypt}}]),
     {ok,#{is_superuser := false}} = emqx_access_control:authenticate(BcryptFoo, <<"foo">>),
     {error, _} = emqx_access_control:authenticate(User1, <<"foo">>),
-	  {error, password_error} = emqx_access_control:authenticate(Bcrypt, <<"password">>).
+    {error, password_error} = emqx_access_control:authenticate(Bcrypt, <<"password">>).
 
 list_auth(_Config) ->
     application:start(emqx_auth_username),
