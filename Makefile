@@ -11,21 +11,18 @@ dep_ecpool      = git https://github.com/emqx/ecpool master
 dep_clique      = git https://github.com/emqx/clique
 dep_emqx_passwd = git https://github.com/emqx/emqx-passwd emqx30
 
-BUILD_DEPS = goldrush emqx cuttlefish
-dep_goldrush = git https://github.com/basho/goldrush 0.1.9
+BUILD_DEPS = emqx cuttlefish
 dep_emqx = git https://github.com/emqtt/emqttd emqx30
 dep_cuttlefish = git https://github.com/emqtt/cuttlefish emqx30
 
 NO_AUTOPATCH = cuttlefish
 
 ERLC_OPTS += +debug_info
-ERLC_OPTS += +'{parse_transform, lager_transform}'
 
 TEST_DEPS = emqx_auth_username
 dep_emqx_auth_username = git https://github.com/emqx/emqx-auth-username emqx30
 
 TEST_ERLC_OPTS += +debug_info
-TEST_ERLC_OPTS += +'{parse_transform, lager_transform}'
 
 COVER = true
 
