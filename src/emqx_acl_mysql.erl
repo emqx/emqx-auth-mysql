@@ -40,7 +40,7 @@ check_acl({Credentials, PubSub, Topic}, #state{acl_query = {AclSql, AclParams}})
                 nomatch          -> ignore
             end;
         {error, Reason} ->
-            lager:error("Mysql check_acl error: ~p~n", [Reason]),
+            logger:error("Mysql check_acl error: ~p~n", [Reason]),
             ignore
     end.
 
