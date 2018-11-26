@@ -8,7 +8,7 @@ DEPS = mysql ecpool clique emqx_passwd
 
 dep_mysql       = git-emqx https://github.com/mysql-otp/mysql-otp 1.3.2
 dep_ecpool      = git-emqx https://github.com/emqx/ecpool master
-dep_clique      = git-emqx https://github.com/emqx/clique
+dep_clique      = git-emqx https://github.com/emqx/clique develop
 dep_emqx_passwd = git-emqx https://github.com/emqx/emqx-passwd emqx30
 
 BUILD_DEPS = emqx cuttlefish
