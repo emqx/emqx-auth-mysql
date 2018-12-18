@@ -21,4 +21,6 @@ cover/
 eunit.coverdata
 data
 .placeholder
-
+_build/
+rebar.lock
+erlang.mk
