@@ -21,4 +21,5 @@ cover/
 eunit.coverdata
 data
 .placeholder
+_build/
 
