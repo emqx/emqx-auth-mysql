@@ -1,5 +1,4 @@
-%%--------------------------------------------------------------------
-%% Copyright (c) 2013-2018 EMQ Enterprise, Inc. (http://emqtt.io)
+%% Copyright (c) 2018 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -12,14 +11,12 @@
 %% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
-%%--------------------------------------------------------------------
 
-%% @doc ACL with MySQL Database
--module(emq_acl_mysql).
+-module(emqx_acl_mysql).
 
--behaviour(emqttd_acl_mod).
+-behaviour(emqx_acl_mod).
 
--include_lib("emqttd/include/emqttd.hrl").
+-include_lib("emqx/include/emqx.hrl").
 
 %% ACL Callbacks
 -export([init/1, check_acl/2, reload_acl/1, description/0]).
@@ -29,36 +26,38 @@
 init(AclQuery) ->
     {ok, #state{acl_query = AclQuery}}.
 
-check_acl({#mqtt_client{username = <<$$, _/binary>>}, _PubSub, _Topic}, _State) ->
-    ignore; 
+check_acl({#{username := <<$$, _/binary>>}, _PubSub, _Topic}, _State) ->
+    ignore;
 
-check_acl({Client, PubSub, Topic}, #state{acl_query   = {AclSql, AclParams}}) ->
-    case emq_auth_mysql_cli:query(AclSql, AclParams, Client) of
-        {ok, _Columns, []} ->
-            ignore;
+check_acl({Credentials, PubSub, Topic}, #state{acl_query = {AclSql, AclParams}}) ->
+    case emqx_auth_mysql_cli:query(AclSql, AclParams, Credentials) of
+        {ok, _Columns, []} -> ignore;
         {ok, _Columns, Rows} ->
             Rules = filter(PubSub, compile(Rows)),
-            case match(Client, Topic, Rules) of
+            case match(Credentials, Topic, Rules) of
                 {matched, allow} -> allow;
                 {matched, deny}  -> deny;
                 nomatch          -> ignore
             end;
         {error, Reason} ->
-            lager:error("Mysql check_acl error: ~p~n", [Reason]),
+            logger:error("Mysql check_acl error: ~p~n", [Reason]),
             ignore
     end.
 
-match(_Client, _Topic, []) ->
+match(_Credentials, _Topic, []) ->
     nomatch;
 
-match(Client, Topic, [Rule|Rules]) ->
-    case emqttd_access_rule:match(Client, Topic, Rule) of
-        nomatch -> match(Client, Topic, Rules);
-        {matched, AllowDeny} -> {matched, AllowDeny}
+match(Credentials, Topic, [Rule|Rules]) ->
+    case emqx_access_rule:match(Credentials, Topic, Rule) of
+        nomatch ->
+            match(Credentials, Topic, Rules);
+        {matched, AllowDeny} ->
+            {matched, AllowDeny}
     end.
 
 filter(PubSub, Rules) ->
-    [Term || Term = {_, _, Access, _} <- Rules, Access =:= PubSub orelse Access =:= pubsub].
+    [Term || Term = {_, _, Access, _} <- Rules,
+             Access =:= PubSub orelse Access =:= pubsub].
 
 compile(Rows) ->
     compile(Rows, []).
@@ -67,7 +66,7 @@ compile([], Acc) ->
 compile([[Allow, IpAddr, Username, ClientId, Access, Topic]|T], Acc) ->
     Who  = who(IpAddr, Username, ClientId),
     Term = {allow(Allow), Who, access(Access), [topic(Topic)]},
-    compile(T, [emqttd_access_rule:compile(Term) | Acc]).
+    compile(T, [emqx_access_rule:compile(Term) | Acc]).
 
 who(_, <<"$all">>, _) ->
     all;
@@ -110,4 +109,3 @@ empty(null) -> true;
 empty("")   -> true;
 empty(<<>>) -> true;
 empty(_)    -> false.
-

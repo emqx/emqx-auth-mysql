@@ -1,5 +1,4 @@
-%%--------------------------------------------------------------------
-%% Copyright (c) 2013-2018 EMQ Enterprise, Inc. (http://emqtt.io)
+%% Copyright (c) 2018 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -12,34 +11,33 @@
 %% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
-%%--------------------------------------------------------------------
--module(emq_auth_mysql_app).
+
+-module(emqx_auth_mysql_app).
 
 -behaviour(application).
 
--include("emq_auth_mysql.hrl").
+-include("emqx_auth_mysql.hrl").
 
--import(emq_auth_mysql_cli, [parse_query/1]).
+-import(emqx_auth_mysql_cli, [parse_query/1]).
 
 %% Application callbacks
 -export([start/2, prep_stop/1, stop/1]).
 
-
 %%--------------------------------------------------------------------
-%% Application Callbacks
+%% Application callbacks
 %%--------------------------------------------------------------------
 
 start(_StartType, _StartArgs) ->
-    {ok, Sup} = emq_auth_mysql_sup:start_link(),
+    {ok, Sup} = emqx_auth_mysql_sup:start_link(),
     if_enabled(auth_query, fun reg_authmod/1),
     if_enabled(acl_query,  fun reg_aclmod/1),
-    emq_auth_mysql_config:register(),
+    emqx_auth_mysql_cfg:register(),
     {ok, Sup}.
 
 prep_stop(State) ->
-    emqttd_access_control:unregister_mod(auth, emq_auth_mysql),
-    emqttd_access_control:unregister_mod(acl, emq_acl_mysql),
-    emq_auth_mysql_config:unregister(),
+    emqx_access_control:unregister_mod(auth, emqx_auth_mysql),
+    emqx_access_control:unregister_mod(acl, emqx_acl_mysql),
+    emqx_auth_mysql_cfg:unregister(),
     State.
 
 stop(_State) ->
@@ -49,10 +47,10 @@ reg_authmod(AuthQuery) ->
     SuperQuery = parse_query(application:get_env(?APP, super_query, undefined)),
     {ok, HashType} = application:get_env(?APP, password_hash),
     AuthEnv = {AuthQuery, SuperQuery, HashType},
-    emqttd_access_control:register_mod(auth, emq_auth_mysql, AuthEnv).
+    emqx_access_control:register_mod(auth, emqx_auth_mysql, AuthEnv).
 
 reg_aclmod(AclQuery) ->
-    emqttd_access_control:register_mod(acl, emq_acl_mysql, AclQuery).
+    emqx_access_control:register_mod(acl, emqx_acl_mysql, AclQuery).
 
 %%--------------------------------------------------------------------
 %% Internal function

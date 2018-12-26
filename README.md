@@ -1,6 +1,6 @@
 
-emq-auth-mysql
-==============
+emqx_auth_mysql
+===============
 
 Authentication, ACL with MySQL Database.
 
@@ -14,7 +14,7 @@ make && make tests
 Configure Plugin
 ----------------
 
-File: etc/emq_auth_mysql.conf
+File: etc/emqx_auth_mysql.conf
 
 ```
 ## MySQL server address.
@@ -108,7 +108,7 @@ Import mqtt.sql into your database.
 Load Plugin
 -----------
 
-./bin/emqttd_ctl plugins load emq_auth_mysql
+./bin/emqx_ctl plugins load emqx_auth_mysql
 
 Auth Table
 ----------
@@ -150,7 +150,6 @@ License
 Apache License Version 2.0
 
 Author
--------
+------
 
 EMQ X Team.
-

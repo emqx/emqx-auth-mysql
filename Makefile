@@ -1,37 +1,35 @@
 .PHONY: app tests
 
-PROJECT = emq_auth_mysql
-PROJECT_DESCRIPTION = Authentication/ACL with MySQL
-PROJECT_VERSION = 2.3.11
+PROJECT = emqx_auth_mysql
+PROJECT_DESCRIPTION = EMQ X Authentication/ACL with MySQL
+PROJECT_VERSION = 3.0
 
-DEPS = mysql ecpool clique
+DEPS = mysql ecpool clique emqx_passwd
 
-dep_mysql  = git https://github.com/mysql-otp/mysql-otp 1.3.1
-dep_ecpool = git https://github.com/emqtt/ecpool v0.2.1
-dep_clique = git https://github.com/emqtt/clique v0.3.10
+dep_mysql       = git-emqx https://github.com/mysql-otp/mysql-otp 1.3.2
+dep_ecpool      = git-emqx https://github.com/emqx/ecpool v0.3.0
+dep_clique      = git-emqx https://github.com/emqx/clique v0.3.11
+dep_emqx_passwd = git-emqx https://github.com/emqx/emqx-passwd v1.0
 
-BUILD_DEPS = emqttd cuttlefish
-dep_emqttd = git https://github.com/emqtt/emqttd master
-dep_cuttlefish = git https://github.com/emqtt/cuttlefish v2.0.11
+BUILD_DEPS = emqx cuttlefish
+dep_emqx = git-emqx https://github.com/emqx/emqx master
+dep_cuttlefish = git-emqx https://github.com/emqx/cuttlefish v2.2.0
 
 NO_AUTOPATCH = cuttlefish
 
 ERLC_OPTS += +debug_info
-ERLC_OPTS += +'{parse_transform, lager_transform}'
 
-TEST_DEPS = emqttc emq_auth_username
-dep_emqttc = git https://github.com/emqtt/emqttc
-dep_emq_auth_username = git https://github.com/emqtt/emq-auth-username
+TEST_DEPS = emqx_auth_username
+dep_emqx_auth_username = git-emqx https://github.com/emqx/emqx-auth-username master
 
 TEST_ERLC_OPTS += +debug_info
-TEST_ERLC_OPTS += +'{parse_transform, lager_transform}'
 
 COVER = true
 
+$(shell [ -f erlang.mk ] || curl -s -o erlang.mk https://raw.githubusercontent.com/emqx/erlmk/master/erlang.mk)
 include erlang.mk
 
 app:: rebar.config
 
 app.config::
-	./deps/cuttlefish/cuttlefish -l info -e etc/ -c etc/emq_auth_mysql.conf -i priv/emq_auth_mysql.schema -d data
-
+	./deps/cuttlefish/cuttlefish -l info -e etc/ -c etc/emqx_auth_mysql.conf -i priv/emqx_auth_mysql.schema -d data
