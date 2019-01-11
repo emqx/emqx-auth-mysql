@@ -157,11 +157,11 @@ acl_super(_Config) ->
     emqx_client:publish(C, <<"TopicA">>, <<"Payload">>, qos2),
     timer:sleep(1000),
     receive
-        {publish, _Topic, Payload} ->
+        {publish, #{paylad := Payload}} ->
             ?assertEqual(<<"Payload">>, Payload)
     after
         1000 ->
-            io:format("Error: receive timeout!~n"),
+            ct:fail("Error: receive timeout!~n"),
             ok
     end,
     emqx_client:disconnect(C).
