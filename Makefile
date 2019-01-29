@@ -12,7 +12,7 @@ dep_clique      = git-emqx https://github.com/emqx/clique v0.3.11
 dep_emqx_passwd = git-emqx https://github.com/emqx/emqx-passwd v1.0
 
 BUILD_DEPS = emqx cuttlefish
-dep_emqx = git-emqx https://github.com/emqx/emqx emqx30
+dep_emqx = git-emqx https://github.com/emqx/emqx develop
 dep_cuttlefish = git-emqx https://github.com/emqx/cuttlefish v2.2.1
 
 NO_AUTOPATCH = cuttlefish
@@ -20,7 +20,7 @@ NO_AUTOPATCH = cuttlefish
 ERLC_OPTS += +debug_info
 
 TEST_DEPS = emqx_auth_username
-dep_emqx_auth_username = git-emqx https://github.com/emqx/emqx-auth-username emqx30
+dep_emqx_auth_username = git-emqx https://github.com/emqx/emqx-auth-username develop
 
 TEST_ERLC_OPTS += +debug_info
 
