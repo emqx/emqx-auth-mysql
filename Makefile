@@ -2,7 +2,6 @@
 
 PROJECT = emqx_auth_mysql
 PROJECT_DESCRIPTION = EMQ X Authentication/ACL with MySQL
-PROJECT_VERSION = 3.1
 
 DEPS = mysql ecpool clique emqx_passwd
 dep_mysql       = git-emqx https://github.com/mysql-otp/mysql-otp 1.3.2
