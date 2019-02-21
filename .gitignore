@@ -22,4 +22,6 @@ eunit.coverdata
 data
 .placeholder
 _build/
-
+rebar.lock
+erlang.mk
+rebar3.crashdump
