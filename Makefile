@@ -10,7 +10,7 @@ dep_clique      = git-emqx https://github.com/emqx/clique v0.3.11
 dep_emqx_passwd = git-emqx https://github.com/emqx/emqx-passwd v1.0
 
 CUR_BRANCH := $(shell git branch | grep -e "^*" | cut -d' ' -f 2)
-BRANCH := $(if $(filter $(CUR_BRANCH), master develop testing), $(CUR_BRANCH), testing)
+BRANCH := $(if $(filter $(CUR_BRANCH), master develop), $(CUR_BRANCH), develop)
 
 BUILD_DEPS = emqx cuttlefish
 dep_emqx = git-emqx https://github.com/emqx/emqx $(BRANCH)
