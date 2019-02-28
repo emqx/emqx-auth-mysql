@@ -1,0 +1,7 @@
+{application,emqx_auth_mysql,
+             [{description,"EMQ X Authentication/ACL with MySQL"},
+              {vsn,"git"},
+              {modules,[]},
+              {registered,[emqx_auth_mysql_sup]},
+              {applications,[kernel,stdlib,mysql,ecpool,clique,emqx_passwd]},
+              {mod,{emqx_auth_mysql_app,[]}}]}.
