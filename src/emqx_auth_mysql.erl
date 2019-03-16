@@ -14,44 +14,49 @@
 
 -module(emqx_auth_mysql).
 
--behaviour(emqx_auth_mod).
-
 -include_lib("emqx/include/emqx.hrl").
 
--export([init/1, check/3, description/0]).
-
--record(state, {auth_query, super_query, hash_type}).
+-export([check/2, description/0]).
 
 -define(EMPTY(Username), (Username =:= undefined orelse Username =:= <<>>)).
 
-init({AuthQuery, SuperQuery, HashType}) ->
-    {ok, #state{auth_query = AuthQuery, super_query = SuperQuery, hash_type = HashType}}.
+check(Credentials = #{username := Username, password := Password}, _State) 
+  when ?EMPTY(Username); ?EMPTY(Password) ->
+    {ok, Credentials#{result => username_or_password_undefined}};
 
-check(#{username := Username}, Password, _State) when ?EMPTY(Username); ?EMPTY(Password) ->
-    {error, username_or_password_undefined};
-
-check(Credentials, Password, #state{auth_query  = {AuthSql, AuthParams},
-                                    super_query = SuperQuery,
-                                    hash_type   = HashType}) ->
-    Result = case emqx_auth_mysql_cli:query(AuthSql, AuthParams, Credentials) of
-                 {ok, [<<"password">>], [[PassHash]]} ->
-                     emqx_passwd:check_pass({PassHash, Password}, HashType);
-                 {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
-                     emqx_passwd:check_pass({PassHash, Salt, Password}, HashType);
-                 {ok, _Columns, []} ->
-                     ignore;
-                 {error, Reason} ->
-                     {error, Reason}
-             end,
-    case Result of ok -> {ok, is_superuser(SuperQuery, Credentials)}; Error -> Error end.
+check(Credentials = #{password := Password}, #{auth_query  := {AuthSql, AuthParams},
+                                               super_query := SuperQuery,
+                                               hash_type   := HashType}) ->
+    CheckPass = case emqx_auth_mysql_cli:query(AuthSql, AuthParams, Credentials) of
+                    {ok, [<<"password">>], [[PassHash]]} ->
+                        check_pass({PassHash, Password}, HashType);
+                    {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
+                        check_pass({PassHash, Salt, Password}, HashType);
+                    {ok, _Columns, []} ->
+                        {error, not_found};
+                    {error, Reason} ->
+                        logger:error("Mysql query '~p' failed: ~p", [AuthSql, Reason]),
+                        {error, not_found}
+                end,
+    case CheckPass of
+        ok -> {stop, Credentials#{is_superuser => is_superuser(SuperQuery, Credentials),
+                                  result => success}};
+        {error, not_found} -> ok;
+        {error, ResultCode} ->
+            logger:error("Auth from mysql failed: ~p", [ResultCode]),
+            {stop, Credentials#{result => ResultCode}}
+    end;
+check(Credentials, Config) ->
+    ResultCode = insufficient_credentials,
+    logger:error("Auth from mysql failed: ~p, Configs: ~p", [ResultCode, Config]),
+    {ok, Credentials#{result => ResultCode}}.
 
 %%--------------------------------------------------------------------
 %% Is Superuser?
 %%--------------------------------------------------------------------
 
 -spec(is_superuser(undefined | {string(), list()}, emqx_types:credentials()) -> boolean()).
-is_superuser(undefined, _Credentials) ->
-    false;
+is_superuser(undefined, _Credentials) -> false;
 is_superuser({SuperSql, Params}, Credentials) ->
     case emqx_auth_mysql_cli:query(SuperSql, Params, Credentials) of
         {ok, [_Super], [[1]]} ->
@@ -62,6 +67,12 @@ is_superuser({SuperSql, Params}, Credentials) ->
             false;
         {error, _Error} ->
             false
+    end.
+
+check_pass(Password, HashType) ->
+    case emqx_passwd:check_pass(Password, HashType) of
+        ok -> ok;
+        {error, _Reason} -> {error, not_authorized}
     end.
 
 description() -> "Authentication with MySQL".
