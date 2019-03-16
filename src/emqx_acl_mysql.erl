@@ -19,11 +19,9 @@
 %% ACL Callbacks
 -export([check_acl/5, reload_acl/1, description/0]).
 
--record(state, {acl_query}).
-
 check_acl(#{username := <<$$, _/binary>>}, _PubSub, _Topic, _NoMatchAction, _State) ->
     ok;
-check_acl(Credentials, PubSub, Topic, _NoMatchAction, #state{acl_query = {AclSql, AclParams}}) ->
+check_acl(Credentials, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, AclParams}}) ->
     case emqx_auth_mysql_cli:query(AclSql, AclParams, Credentials) of
         {ok, _Columns, []} -> ok;
         {ok, _Columns, Rows} ->
