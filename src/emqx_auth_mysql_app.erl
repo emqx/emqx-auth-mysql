@@ -36,7 +36,7 @@ start(_StartType, _StartArgs) ->
 
 prep_stop(State) ->
     emqx:unhook('client.authenticate', fun emqx_auth_mysql:check/2),
-    emqx:unhook('client.check_acl', fun emqx_acl_mysql:check_acl/4),
+    emqx:unhook('client.check_acl', fun emqx_acl_mysql:check_acl/5),
     emqx_auth_mysql_cfg:unregister(),
     State.
 
