@@ -71,18 +71,14 @@
                              "(8, false, 'bcrypt_wrong', '$2y$16$rEVsDarhgHYB0TGnDFJzyu', 'salt')">>).
 
 all() ->
-    [{group, emqx_auth_mysql_auth},
-     {group, emqx_auth_mysql_acl},
-     {group, emqx_auth_mysql}
-     %{group, auth_mysql_cfg}
-     ].
+    [{group, emqx_auth_mysql_acl},
+     {group, emqx_auth_mysql_auth},
+     {group, emqx_auth_mysql}].
 
 groups() ->
-    [{emqx_auth_mysql_auth, [sequence], [check_auth, list_auth]},
+    [{emqx_auth_mysql_auth, [sequence], [check_auth]},
      {emqx_auth_mysql_acl, [sequence], [check_acl, acl_super]},
-     {emqx_auth_mysql, [sequence], [comment_config]},
-     {auth_mysql_cfg, [sequence], [server_config]}
-    ].
+     {emqx_auth_mysql, [sequence], [comment_config]}].
 
 init_per_suite(Config) ->
     [start_apps(App, {SchemaFile, ConfigFile}) ||
@@ -99,40 +95,12 @@ end_per_suite(_Config) ->
     application:stop(emqx_auth_mysql),
     application:stop(emqx).
 
-get_base_dir() ->
-    {file, Here} = code:is_loaded(?MODULE),
-    filename:dirname(filename:dirname(Here)).
-
-local_path(RelativePath) ->
-    filename:join([get_base_dir(), RelativePath]).
-
-start_apps(App, {SchemaFile, ConfigFile}) ->
-    read_schema_configs(App, {SchemaFile, ConfigFile}),
-    set_special_configs(App),
-    application:ensure_all_started(App).
-
-read_schema_configs(App, {SchemaFile, ConfigFile}) ->
-    ct:pal("Read configs - SchemaFile: ~p, ConfigFile: ~p", [SchemaFile, ConfigFile]),
-    Schema = cuttlefish_schema:files([SchemaFile]),
-    Conf = conf_parse:file(ConfigFile),
-    NewConfig = cuttlefish_generator:map(Schema, Conf),
-    Vals = proplists:get_value(App, NewConfig, []),
-    [application:set_env(App, Par, Value) || {Par, Value} <- Vals].
-
-set_special_configs(emqx) ->
-    application:set_env(emqx, allow_anonymous, false),
-    application:set_env(emqx, enable_acl_cache, false),
-    application:set_env(emqx, plugins_loaded_file,
-                        local_path("deps/emqx/test/emqx_SUITE_data/loaded_plugins"));
-set_special_configs(_App) ->
-    ok.
-
 check_acl(_) ->
     init_acl_(),
     User1 = #{zone => external, client_id => <<"c1">>, username => <<"u1">>, peername => {{127,0,0,1}, 1}},
     User2 = #{zone => external, client_id => <<"c2">>, username => <<"u2">>, peername => {{127,0,0,1}, 1}},
     allow = emqx_access_control:check_acl(User1, subscribe, <<"t1">>),
-    deny = emqx_access_control:check_acl(User2, subscribe, <<"t1">>),
+    allow = emqx_access_control:check_acl(User2, subscribe, <<"t1">>),
 
     User3 = #{zone => external, peername => {{10,10,0,110}, 1}, client_id => <<"c1">>, username => <<"u1">>},
     User4 = #{zone => external, peername => {{10,10,10,110}, 1}, client_id => <<"c1">>, username => <<"u1">>},
@@ -145,11 +113,12 @@ check_acl(_) ->
     allow = emqx_access_control:check_acl(User5, publish, <<"t1">>).
 
 acl_super(_Config) ->
+    init_auth_(),
     reload([{password_hash, plain}]),
-    {ok, C} = emqx_client:start_link([ {host, "localhost"},
-                                       {client_id, <<"simpleClient">>},
-                                       {username, <<"plain">>},
-                                       {password, <<"plain">>}]),
+    {ok, C} = emqx_client:start_link([{host, "localhost"},
+                                      {client_id, <<"simpleClient">>},
+                                      {username, <<"plain">>},
+                                      {password, <<"plain">>}]),
     {ok, _} = emqx_client:connect(C),
     timer:sleep(10),
     emqx_client:subscribe(C, <<"TopicA">>, qos2),
@@ -184,62 +153,37 @@ check_auth(_) ->
     Bcrypt = #{client_id => <<"bcrypt">>, username => <<"bcrypt">>},
     BcryptWrong = #{client_id => <<"bcrypt_wrong">>, username => <<"bcrypt_wrong">>},
     reload([{password_hash, plain}]),
-    {ok,#{is_superuser := true}} = emqx_access_control:authenticate(Plain, <<"plain">>),
+    {ok,#{is_superuser := true}} =
+        emqx_access_control:authenticate(Plain#{password => <<"plain">>}),
     reload([{password_hash, md5}]),
-    {ok,#{is_superuser := false}} = emqx_access_control:authenticate(Md5, <<"md5">>),
+    {ok,#{is_superuser := false}} =
+        emqx_access_control:authenticate(Md5#{password => <<"md5">>}),
     reload([{password_hash, sha}]),
-    {ok,#{is_superuser := false}} = emqx_access_control:authenticate(Sha, <<"sha">>),
+    {ok,#{is_superuser := false}} =
+        emqx_access_control:authenticate(Sha#{password => <<"sha">>}),
     reload([{password_hash, sha256}]),
-    {ok,#{is_superuser := false}} = emqx_access_control:authenticate(Sha256, <<"sha256">>),
+    {ok,#{is_superuser := false}} =
+        emqx_access_control:authenticate(Sha256#{password => <<"sha256">>}),
     reload([{password_hash, bcrypt}]),
-    {ok,#{is_superuser := false}} = emqx_access_control:authenticate(Bcrypt, <<"password">>),
-    {error,password_error} = emqx_access_control:authenticate(BcryptWrong, <<"password">>),
+    {ok,#{is_superuser := false}} =
+        emqx_access_control:authenticate(Bcrypt#{password => <<"password">>}),
+    {error, not_authorized} =
+        emqx_access_control:authenticate(BcryptWrong#{password => <<"password">>}),
     %%pbkdf2 sha
-    reload([{password_hash, {pbkdf2, sha, 1, 16}}, {auth_query, "select password, salt from mqtt_user where username = '%u' limit 1"}]),
-    {ok,#{is_superuser := false}} = emqx_access_control:authenticate(Pbkdf2, <<"password">>),
+    reload([{password_hash, {pbkdf2, sha, 1, 16}},
+            {auth_query, "select password, salt from mqtt_user where username = '%u' limit 1"}]),
+    {ok,#{is_superuser := false}} =
+        emqx_access_control:authenticate(Pbkdf2#{password => <<"password">>}),
     reload([{password_hash, {salt, bcrypt}}]),
-    {ok,#{is_superuser := false}} = emqx_access_control:authenticate(BcryptFoo, <<"foo">>),
-    {error, _} = emqx_access_control:authenticate(User1, <<"foo">>),
-    {error, password_error} = emqx_access_control:authenticate(Bcrypt, <<"password">>).
-
-list_auth(_Config) ->
-    application:start(emqx_auth_username),
-    emqx_auth_username:add_user(<<"user1">>, <<"password1">>),
-    User1 = #{client_id => <<"client1">>, username => <<"user1">>},
-    ok = emqx_access_control:authenticate(User1, <<"password1">>),
-    reload([{password_hash, plain}, {auth_query, "select password from mqtt_user where username = '%u' limit 1"}]),
-    Plain = #{client_id => <<"client1">>, username => <<"plain">>},
-    {ok,#{is_superuser := true}} = emqx_access_control:authenticate(Plain, <<"plain">>),
-    application:stop(emqx_auth_username).
+    {ok,#{is_superuser := false}} =
+        emqx_access_control:authenticate(BcryptFoo#{password => <<"foo">>}),
+    {error, _} = emqx_access_control:authenticate(User1#{password => <<"foo">>}),
+    {error, not_authorized} = emqx_access_control:authenticate(Bcrypt#{password => <<"password">>}).
 
 comment_config(_) ->
     application:stop(?APP),
     [application:unset_env(?APP, Par) || Par <- [acl_query, auth_query]],
-    application:start(?APP),
-    ?assertEqual([], emqx_access_control:lookup_mods(auth)),
-    ?assertEqual([], emqx_access_control:lookup_mods(acl)).
-
-server_config(_) ->
-    I = [{host, "localhost"},
-         {pool_size, 1},
-         {port, 3306},
-         {auto_reconnect, 1},
-         {user, "admin"},
-         {password, "public"},
-         {database, "sercrit"},
-         {encoding, utf8},
-         {keep_alive, true}],
-    SetConfigKeys = ["server=localhost:3306",
-                     "pool=1",
-                     "username=admin",
-                     "password=public",
-                     "database=sercrit",
-                     "password_hash=sha256,salt"],
-    lists:foreach(fun set_cmd/1, SetConfigKeys),
-    {ok, E} = application:get_env(emqx_auth_mysql, server),
-    {ok, Hash} = application:get_env(emqx_auth_mysql, password_hash),
-    ?assertEqual(lists:sort(I), lists:sort(E)),
-    ?assertEqual({sha256,salt}, Hash).
+    application:start(?APP).
 
 set_cmd(Key) ->
     emqx_cli_config:run(["config", "set", string:join(["auth.mysql", Key], "."), "--app=emqx_auth_mysql"]).
@@ -261,3 +205,31 @@ reload(Config) when is_list(Config) ->
     [application:set_env(?APP, K, V) || {K, V} <- Config],
     ct:pal("~p: all configs after: ~p ", [?APP, application:get_all_env(?APP)]),
     application:start(?APP).
+
+get_base_dir() ->
+    {file, Here} = code:is_loaded(?MODULE),
+    filename:dirname(filename:dirname(Here)).
+
+local_path(RelativePath) ->
+    filename:join([get_base_dir(), RelativePath]).
+
+start_apps(App, {SchemaFile, ConfigFile}) ->
+    read_schema_configs(App, {SchemaFile, ConfigFile}),
+    set_special_configs(App),
+    application:ensure_all_started(App).
+
+read_schema_configs(App, {SchemaFile, ConfigFile}) ->
+    ct:pal("Read configs - SchemaFile: ~p, ConfigFile: ~p", [SchemaFile, ConfigFile]),
+    Schema = cuttlefish_schema:files([SchemaFile]),
+    Conf = conf_parse:file(ConfigFile),
+    NewConfig = cuttlefish_generator:map(Schema, Conf),
+    Vals = proplists:get_value(App, NewConfig, []),
+    [application:set_env(App, Par, Value) || {Par, Value} <- Vals].
+
+set_special_configs(emqx) ->
+    application:set_env(emqx, allow_anonymous, false),
+    application:set_env(emqx, enable_acl_cache, false),
+    application:set_env(emqx, plugins_loaded_file,
+                        local_path("deps/emqx/test/emqx_SUITE_data/loaded_plugins"));
+set_special_configs(_App) ->
+    ok.
