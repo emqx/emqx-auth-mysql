@@ -29,28 +29,30 @@
 
 start(_StartType, _StartArgs) ->
     {ok, Sup} = emqx_auth_mysql_sup:start_link(),
-    if_enabled(auth_query, fun reg_authmod/1),
-    if_enabled(acl_query,  fun reg_aclmod/1),
+    if_enabled(auth_query, fun load_auth_hook/1),
+    if_enabled(acl_query,  fun load_acl_hook/1),
     emqx_auth_mysql_cfg:register(),
     {ok, Sup}.
 
 prep_stop(State) ->
-    emqx_access_control:unregister_mod(auth, emqx_auth_mysql),
-    emqx_access_control:unregister_mod(acl, emqx_acl_mysql),
+    emqx:unhook('client.authenticate', fun emqx_auth_mysql:check/2),
+    emqx:unhook('client.check_acl', fun emqx_acl_mysql:check_acl/5),
     emqx_auth_mysql_cfg:unregister(),
     State.
 
 stop(_State) ->
     ok.
 
-reg_authmod(AuthQuery) ->
+load_auth_hook(AuthQuery) ->
     SuperQuery = parse_query(application:get_env(?APP, super_query, undefined)),
     {ok, HashType} = application:get_env(?APP, password_hash),
-    AuthEnv = {AuthQuery, SuperQuery, HashType},
-    emqx_access_control:register_mod(auth, emqx_auth_mysql, AuthEnv).
+    Params = #{auth_query  => AuthQuery,
+               super_query => SuperQuery,
+               hash_type   => HashType},
+    emqx:hook('client.authenticate', fun emqx_auth_mysql:check/2, [Params]).
 
-reg_aclmod(AclQuery) ->
-    emqx_access_control:register_mod(acl, emqx_acl_mysql, AclQuery).
+load_acl_hook(AclQuery) ->
+    emqx:hook('client.acl_check', fun emqx_acl_mysql:check_acl/5, [#{acl_query => AclQuery}]).
 
 %%--------------------------------------------------------------------
 %% Internal function
@@ -61,4 +63,3 @@ if_enabled(Cfg, Fun) ->
         {ok, Query} -> Fun(parse_query(Query));
         undefined   -> ok
     end.
-
