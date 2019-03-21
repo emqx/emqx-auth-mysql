@@ -16,6 +16,8 @@
 
 -behaviour(application).
 
+-emqx_plugin(?MODULE).
+
 -include("emqx_auth_mysql.hrl").
 
 -import(emqx_auth_mysql_cli, [parse_query/1]).
