@@ -57,7 +57,7 @@ load_auth_hook(AuthQuery) ->
     emqx:hook('client.authenticate', fun emqx_auth_mysql:check/2, [Params]).
 
 load_acl_hook(AclQuery) ->
-    emqx:hook('client.acl_check', fun emqx_acl_mysql:check_acl/5, [#{acl_query => AclQuery}]).
+    emqx:hook('client.check_acl', fun emqx_acl_mysql:check_acl/5, [#{acl_query => AclQuery}]).
 
 %%--------------------------------------------------------------------
 %% Internal function
