@@ -73,11 +73,13 @@
 all() ->
     [{group, emqx_auth_mysql_acl},
      {group, emqx_auth_mysql_auth},
-     {group, emqx_auth_mysql}].
+     {group, emqx_auth_mysql}
+    ].
 
 groups() ->
     [{emqx_auth_mysql_auth, [sequence], [check_auth]},
-     {emqx_auth_mysql_acl, [sequence], [check_acl, acl_super]},
+     {emqx_auth_mysql_acl, [sequence], [check_acl, 
+                                        acl_super]},
      {emqx_auth_mysql, [sequence], [comment_config]}].
 
 init_per_suite(Config) ->
@@ -100,7 +102,7 @@ check_acl(_) ->
     User1 = #{zone => external, client_id => <<"c1">>, username => <<"u1">>, peername => {{127,0,0,1}, 1}},
     User2 = #{zone => external, client_id => <<"c2">>, username => <<"u2">>, peername => {{127,0,0,1}, 1}},
     allow = emqx_access_control:check_acl(User1, subscribe, <<"t1">>),
-    allow = emqx_access_control:check_acl(User2, subscribe, <<"t1">>),
+    deny = emqx_access_control:check_acl(User2, subscribe, <<"t1">>),
 
     User3 = #{zone => external, peername => {{10,10,0,110}, 1}, client_id => <<"c1">>, username => <<"u1">>},
     User4 = #{zone => external, peername => {{10,10,10,110}, 1}, client_id => <<"c1">>, username => <<"u1">>},
