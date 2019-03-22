@@ -23,7 +23,10 @@
 -import(emqx_auth_mysql_cli, [parse_query/1]).
 
 %% Application callbacks
--export([start/2, prep_stop/1, stop/1]).
+-export([  start/2
+         , prep_stop/1
+         , stop/1
+         ]).
 
 %%--------------------------------------------------------------------
 %% Application callbacks

@@ -17,7 +17,10 @@
 -include_lib("emqx/include/emqx.hrl").
 
 %% ACL Callbacks
--export([check_acl/5, reload_acl/1, description/0]).
+-export([  check_acl/5
+         , reload_acl/1
+         , description/0
+         ]).
 
 check_acl(#{username := <<$$, _/binary>>}, _PubSub, _Topic, _NoMatchAction, _State) ->
     ok;
