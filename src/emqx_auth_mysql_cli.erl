@@ -30,10 +30,10 @@
 parse_query(undefined) ->
     undefined;
 parse_query(Sql) ->
-    case re:run(Sql, "'%[uca]'", [global, {capture, all, list}]) of
+    case re:run(Sql, "'%[uca][n]?'", [global, {capture, all, list}]) of
         {match, Variables} ->
             Params = [Var || [Var] <- Variables],
-            {re:replace(Sql, "'%[uca]'", "?", [global, {return, list}]), Params};
+            {re:replace(Sql, "'%[uca][n]?'", "?", [global, {return, list}]), Params};
         nomatch ->
             {Sql, []}
     end.
@@ -59,6 +59,10 @@ replvar(["'%c'" | Params], Credentials = #{client_id := ClientId}, Acc) ->
     replvar(Params, Credentials, [ClientId | Acc]);
 replvar(["'%a'" | Params], Credentials = #{peername := {IpAddr, _}}, Acc) ->
     replvar(Params, Credentials, [inet_parse:ntoa(IpAddr) | Acc]);
+replvar(["'%cn'" | Params], Credentials = #{cn := CN}, Acc) ->
+    replvar(Params, Credentials, [CN | Acc]);
+replvar(["'%dn'" | Params], Credentials = #{dn := DN}, Acc) ->
+    replvar(Params, Credentials, [DN | Acc]);
 replvar([Param | Params], Credentials, Acc) ->
     replvar(Params, Credentials, [Param | Acc]).
 
