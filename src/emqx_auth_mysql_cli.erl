@@ -30,10 +30,10 @@
 parse_query(undefined) ->
     undefined;
 parse_query(Sql) ->
-    case re:run(Sql, "'%[uca][n]?'", [global, {capture, all, list}]) of
+    case re:run(Sql, "'%[ucad][n]?'", [global, {capture, all, list}]) of
         {match, Variables} ->
             Params = [Var || [Var] <- Variables],
-            {re:replace(Sql, "'%[uca][n]?'", "?", [global, {return, list}]), Params};
+            {re:replace(Sql, "'%[ucad][n]?'", "?", [global, {return, list}]), Params};
         nomatch ->
             {Sql, []}
     end.
