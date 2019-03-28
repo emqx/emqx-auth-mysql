@@ -19,9 +19,9 @@ VALUES
 	(1,1,NULL,'$all',NULL,2,'#'),
 	(2,0,NULL,'$all',NULL,1,'$SYS/#'),
 	(3,0,NULL,'$all',NULL,1,'eq #'),
-	(5,1,'127.0.0.1',NULL,NULL,2,'$SYS/#'),
-	(6,1,'127.0.0.1',NULL,NULL,2,'#'),
-	(7,1,NULL,'dashboard',NULL,1,'$SYS/#');
+	(4,1,'127.0.0.1',NULL,NULL,2,'$SYS/#'),
+	(5,1,'127.0.0.1',NULL,NULL,2,'#'),
+	(6,1,NULL,'dashboard',NULL,1,'$SYS/#');
 
 UNLOCK TABLES;
 
