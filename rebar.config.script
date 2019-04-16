@@ -18,9 +18,9 @@ CONFIG1 = case os:getenv("TRAVIS") of
  
 CUR_BRANCH = os:cmd("git branch | grep -e '^*' | cut -d' ' -f 2") -- "\n",
  
-BRANCH = case lists:member(CUR_BRANCH, ["master", "develop", "testing"]) of
+BRANCH = case lists:member(CUR_BRANCH, ["master", "develop"]) of
              true -> CUR_BRANCH;
-             false -> "testing"
+             false -> "develop"
          end,
  
 FindDeps = fun(DepsType, Config) ->
