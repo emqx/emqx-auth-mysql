@@ -4,11 +4,7 @@ PROJECT = emqx_auth_mysql
 PROJECT_DESCRIPTION = EMQ X Authentication/ACL with MySQL
 
 DEPS = mysql ecpool clique emqx_passwd
-
-# Proxysql support is enabled by using an unreleased upstream version.
-# Setting dep commit/branch to master might break the build when upstream updates,
-# so locking onto the commit instead in a dep hook below.
-dep_mysql       = git-emqx https://github.com/mysql-otp/mysql-otp master
+dep_mysql       = git-emqx https://github.com/mysql-otp/mysql-otp 1.5.0
 dep_ecpool      = git-emqx https://github.com/emqx/ecpool v0.3.0
 dep_clique      = git-emqx https://github.com/emqx/clique v0.3.11
 dep_emqx_passwd = git-emqx https://github.com/emqx/emqx-passwd v1.0
