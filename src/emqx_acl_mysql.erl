@@ -15,6 +15,7 @@
 -module(emqx_acl_mysql).
 
 -include_lib("emqx/include/emqx.hrl").
+-include_lib("emqx/include/logger.hrl").
 
 %% ACL Callbacks
 -export([ check_acl/5
@@ -35,7 +36,7 @@ check_acl(Credentials, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, Ac
                 nomatch          -> ok
             end;
         {error, Reason} ->
-            logger:error("Mysql check_acl error: ~p~n", [Reason]),
+            ?LOG(error, "[MySQL] check_acl error: ~p~n", [Reason]),
             ok
     end.
 
