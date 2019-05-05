@@ -24,9 +24,7 @@ UrlPrefix = "https://github.com/emqx/",
 
 EMQX_DEP = {emqx, {git, UrlPrefix ++ "emqx", {branch, BRANCH}}},
 
-EMQX_MGMT_DEP = {emqx_management, {git, UrlPrefix ++ "emqx-management", {branch, BRANCH}}},
-
-NewDeps = [EMQX_DEP, EMQX_MGMT_DEP | DEPS],
+NewDeps = [EMQX_DEP | DEPS],
 
 CONFIG2 = lists:keystore(deps, 1, CONFIG1, {deps, NewDeps}),
 
