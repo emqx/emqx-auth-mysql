@@ -26,3 +26,4 @@ rebar.lock
 erlang.mk
 rebar3.crashdump
 etc/emqx_auth_mysql.conf.rendered
+.rebar3/

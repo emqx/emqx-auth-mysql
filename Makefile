@@ -9,6 +9,8 @@ all: compile
 compile:
 	$(REBAR) compile
 
+clean: distclean
+
 ct: compile
 	$(REBAR) as test ct -v
 
@@ -18,6 +20,7 @@ eunit: compile
 xref:
 	$(REBAR) xref
 
-clean:
+distclean:
 	@rm -rf _build
 	@rm -f data/app.*.config data/vm.*.args rebar.lock
+
