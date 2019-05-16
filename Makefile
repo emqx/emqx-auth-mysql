@@ -10,6 +10,8 @@ all: compile
 compile:
 	$(REBAR) compile
 
+clean: distclean
+
 ct: compile
 	$(REBAR) as test ct -v
 
@@ -33,4 +35,3 @@ $(CUTTLEFISH_SCRIPT):
 
 app.config: $(CUTTLEFISH_SCRIPT) etc/emqx_auth_mysql.conf
 	$(verbose) $(CUTTLEFISH_SCRIPT) -l info -e etc/ -c etc/emqx_auth_mysql.conf -i priv/emqx_auth_mysql.schema -d data
-
