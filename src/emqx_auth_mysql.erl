@@ -15,16 +15,13 @@
 -module(emqx_auth_mysql).
 
 -include_lib("emqx/include/emqx.hrl").
+-include_lib("emqx/include/logger.hrl").
 
 -export([ check/2
         , description/0
         ]).
 
 -define(EMPTY(Username), (Username =:= undefined orelse Username =:= <<>>)).
-
-check(Credentials = #{username := Username, password := Password}, _State) 
-  when ?EMPTY(Username); ?EMPTY(Password) ->
-    {ok, Credentials#{auth_result => bad_username_or_password}};
 
 check(Credentials = #{password := Password}, #{auth_query  := {AuthSql, AuthParams},
                                                super_query := SuperQuery,
@@ -37,21 +34,18 @@ check(Credentials = #{password := Password}, #{auth_query  := {AuthSql, AuthPara
                     {ok, _Columns, []} ->
                         {error, not_found};
                     {error, Reason} ->
-                        logger:error("Mysql query '~p' failed: ~p", [AuthSql, Reason]),
+                        ?LOG(error, "[MySQL] query '~p' failed: ~p", [AuthSql, Reason]),
                         {error, not_found}
                 end,
     case CheckPass of
         ok -> {stop, Credentials#{is_superuser => is_superuser(SuperQuery, Credentials),
+                                  anonymous => false,
                                   auth_result => success}};
         {error, not_found} -> ok;
         {error, ResultCode} ->
-            logger:error("Auth from mysql failed: ~p", [ResultCode]),
-            {stop, Credentials#{auth_result => ResultCode}}
-    end;
-check(Credentials, Config) ->
-    ResultCode = insufficient_credentials,
-    logger:error("Auth from mysql failed: ~p, Configs: ~p", [ResultCode, Config]),
-    {ok, Credentials#{auth_result => ResultCode}}.
+            ?LOG(error, "[MySQL] Auth from mysql failed: ~p", [ResultCode]),
+            {stop, Credentials#{auth_result => ResultCode, anonymous => false}}
+    end.
 
 %%--------------------------------------------------------------------
 %% Is Superuser?
