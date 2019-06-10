@@ -3,8 +3,6 @@ version: '3'
 services:
   erlang:
     image: erlang:21.3
-    labels: 
-      name: tests
     volumes:
       - ./:/emqx_auth_mysql
     networks:
