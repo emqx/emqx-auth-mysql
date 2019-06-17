@@ -59,9 +59,9 @@ replvar(["'%c'" | Params], Credentials = #{client_id := ClientId}, Acc) ->
     replvar(Params, Credentials, [ClientId | Acc]);
 replvar(["'%a'" | Params], Credentials = #{peername := {IpAddr, _}}, Acc) ->
     replvar(Params, Credentials, [inet_parse:ntoa(IpAddr) | Acc]);
-replvar(["'%cn'" | Params], Credentials = #{cn := CN}, Acc) ->
+replvar(["'%C'" | Params], Credentials = #{cn := CN}, Acc) ->
     replvar(Params, Credentials, [CN | Acc]);
-replvar(["'%dn'" | Params], Credentials = #{dn := DN}, Acc) ->
+replvar(["'%d'" | Params], Credentials = #{dn := DN}, Acc) ->
     replvar(Params, Credentials, [DN | Acc]);
 replvar([Param | Params], Credentials, Acc) ->
     replvar(Params, Credentials, [Param | Acc]).
