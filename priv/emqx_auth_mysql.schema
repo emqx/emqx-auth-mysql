@@ -25,6 +25,11 @@
   {datatype, string}
 ]}.
 
+{mapping, "auth.mysql.query_timeout", "emqx_auth_mysql.server", [
+  {default, "5s"},
+  {datatype, {duration, ms}}
+]}.
+
 {translation, "emqx_auth_mysql.server", fun(Conf) ->
   {MyHost, MyPort} =
   case cuttlefish:conf_get("auth.mysql.server", Conf) of
@@ -38,6 +43,7 @@
   Username = cuttlefish:conf_get("auth.mysql.username", Conf),
   Passwd = cuttlefish:conf_get("auth.mysql.password", Conf),
   DB = cuttlefish:conf_get("auth.mysql.database", Conf),
+  Timeout = cuttlefish:conf_get("auth.mysql.query_timeout", Conf),
   [{pool_size, Pool},
    {auto_reconnect, 1},
    {host, MyHost},
@@ -46,8 +52,10 @@
    {password, Passwd},
    {database, DB},
    {encoding, utf8},
+   {query_timeout, Timeout},
    {keep_alive, true}]
 end}.
+
 
 {mapping, "auth.mysql.auth_query", "emqx_auth_mysql.auth_query", [
   {datatype, string}
