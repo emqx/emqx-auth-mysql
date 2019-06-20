@@ -25,7 +25,7 @@
 -define(EMPTY(Username), (Username =:= undefined orelse Username =:= <<>>)).
 
 register_metrics() ->
-    [emqx_metrics:new(MetricName) || MetricName <- ['auth.mysql.succeed', 'auth.mysql.fail', 'auth.mysql.ignore']].
+    [emqx_metrics:new(MetricName) || MetricName <- ['auth.mysql.success', 'auth.mysql.failure', 'auth.mysql.ignore']].
 
 check(Credentials = #{password := Password}, #{auth_query  := {AuthSql, AuthParams},
                                                super_query := SuperQuery,
@@ -43,7 +43,7 @@ check(Credentials = #{password := Password}, #{auth_query  := {AuthSql, AuthPara
                 end,
     case CheckPass of
         ok ->
-            emqx_metrics:inc('auth.mysql.succeed'),
+            emqx_metrics:inc('auth.mysql.success'),
             {stop, Credentials#{is_superuser => is_superuser(SuperQuery, Credentials),
                                 anonymous => false,
                                 auth_result => success}};
@@ -51,7 +51,7 @@ check(Credentials = #{password := Password}, #{auth_query  := {AuthSql, AuthPara
             emqx_metrics:inc('auth.mysql.ignore'), ok;
         {error, ResultCode} ->
             ?LOG(error, "[MySQL] Auth from mysql failed: ~p", [ResultCode]),
-            emqx_metrics:inc('auth.mysql.fail'),
+            emqx_metrics:inc('auth.mysql.failure'),
             {stop, Credentials#{auth_result => ResultCode, anonymous => false}}
     end.
 
