@@ -16,7 +16,7 @@
 
 -behaviour(application).
 
--emqx_plugin(?MODULE).
+-emqx_plugin(auth).
 
 -include("emqx_auth_mysql.hrl").
 
@@ -54,9 +54,11 @@ load_auth_hook(AuthQuery) ->
     Params = #{auth_query  => AuthQuery,
                super_query => SuperQuery,
                hash_type   => HashType},
+    emqx_auth_mysql:register_metrics(),
     emqx:hook('client.authenticate', fun emqx_auth_mysql:check/2, [Params]).
 
 load_acl_hook(AclQuery) ->
+    emqx_acl_mysql:register_metrics(),
     emqx:hook('client.check_acl', fun emqx_acl_mysql:check_acl/5, [#{acl_query => AclQuery}]).
 
 %%--------------------------------------------------------------------
