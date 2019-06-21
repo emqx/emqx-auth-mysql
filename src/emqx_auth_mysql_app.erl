@@ -16,7 +16,7 @@
 
 -behaviour(application).
 
--emqx_plugin(?MODULE).
+-emqx_plugin(auth).
 
 -include("emqx_auth_mysql.hrl").
 
