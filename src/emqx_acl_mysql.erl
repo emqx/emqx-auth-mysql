@@ -18,14 +18,25 @@
 -include_lib("emqx/include/logger.hrl").
 
 %% ACL Callbacks
--export([ check_acl/5
+-export([ register_metrics/0
+        , check_acl/5
         , reload_acl/1
         , description/0
         ]).
 
-check_acl(#{username := <<$$, _/binary>>}, _PubSub, _Topic, _NoMatchAction, _State) ->
+register_metrics() ->
+    [emqx_metrics:new(MetricName) || MetricName <- ['acl.mysql.allow', 'acl.mysql.deny', 'acl.mysql.ignore']].
+
+check_acl(Credentials, PubSub, Topic, NoMatchAction, State) ->
+    case do_check_acl(Credentials, PubSub, Topic, NoMatchAction, State) of
+        ok -> emqx_metrics:inc('acl.mysql.ignore'), ok;
+        {stop, allow} -> emqx_metrics:inc('acl.mysql.allow'), {stop, allow};
+        {stop, deny} -> emqx_metrics:inc('acl.mysql.deny'), {stop, deny}
+    end.
+
+do_check_acl(#{username := <<$$, _/binary>>}, _PubSub, _Topic, _NoMatchAction, _State) ->
     ok;
-check_acl(Credentials, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, AclParams}}) ->
+do_check_acl(Credentials, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, AclParams}}) ->
     case emqx_auth_mysql_cli:query(AclSql, AclParams, Credentials) of
         {ok, _Columns, []} -> ok;
         {ok, _Columns, Rows} ->
@@ -36,7 +47,7 @@ check_acl(Credentials, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, Ac
                 nomatch          -> ok
             end;
         {error, Reason} ->
-            ?LOG(error, "[MySQL] check_acl error: ~p~n", [Reason]),
+            ?LOG(error, "[MySQL] do_check_acl error: ~p~n", [Reason]),
             ok
     end.
 
