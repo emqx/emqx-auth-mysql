@@ -40,7 +40,7 @@ start(_StartType, _StartArgs) ->
     {ok, Sup}.
 
 prep_stop(State) ->
-    emqx:unhook('client.authenticate', fun emqx_auth_mysql:check/2),
+    emqx:unhook('client.authenticate', fun emqx_auth_mysql:check/3),
     emqx:unhook('client.check_acl', fun emqx_acl_mysql:check_acl/5),
     emqx_auth_mysql_cfg:unregister(),
     State.
@@ -55,7 +55,7 @@ load_auth_hook(AuthQuery) ->
                super_query => SuperQuery,
                hash_type   => HashType},
     emqx_auth_mysql:register_metrics(),
-    emqx:hook('client.authenticate', fun emqx_auth_mysql:check/2, [Params]).
+    emqx:hook('client.authenticate', fun emqx_auth_mysql:check/3, [Params]).
 
 load_acl_hook(AclQuery) ->
     emqx_acl_mysql:register_metrics(),
