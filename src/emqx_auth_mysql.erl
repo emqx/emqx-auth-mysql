@@ -18,7 +18,7 @@
 -include_lib("emqx/include/logger.hrl").
 
 -export([ register_metrics/0
-        , check/2
+        , check/3
         , description/0
         ]).
 
@@ -27,9 +27,10 @@
 register_metrics() ->
     [emqx_metrics:new(MetricName) || MetricName <- ['auth.mysql.success', 'auth.mysql.failure', 'auth.mysql.ignore']].
 
-check(Credentials = #{password := Password}, #{auth_query  := {AuthSql, AuthParams},
-                                               super_query := SuperQuery,
-                                               hash_type   := HashType}) ->
+check(Credentials = #{password := Password}, AuthResult,
+      #{auth_query  := {AuthSql, AuthParams},
+        super_query := SuperQuery,
+        hash_type   := HashType}) ->
     CheckPass = case emqx_auth_mysql_cli:query(AuthSql, AuthParams, Credentials) of
                     {ok, [<<"password">>], [[PassHash]]} ->
                         check_pass({PassHash, Password}, HashType);
@@ -44,7 +45,7 @@ check(Credentials = #{password := Password}, #{auth_query  := {AuthSql, AuthPara
     case CheckPass of
         ok ->
             emqx_metrics:inc('auth.mysql.success'),
-            {stop, Credentials#{is_superuser => is_superuser(SuperQuery, Credentials),
+            {stop, AuthResult#{is_superuser => is_superuser(SuperQuery, Credentials),
                                 anonymous => false,
                                 auth_result => success}};
         {error, not_found} ->
@@ -52,7 +53,7 @@ check(Credentials = #{password := Password}, #{auth_query  := {AuthSql, AuthPara
         {error, ResultCode} ->
             ?LOG(error, "[MySQL] Auth from mysql failed: ~p", [ResultCode]),
             emqx_metrics:inc('auth.mysql.failure'),
-            {stop, Credentials#{auth_result => ResultCode, anonymous => false}}
+            {stop, AuthResult#{auth_result => ResultCode, anonymous => false}}
     end.
 
 %%--------------------------------------------------------------------
