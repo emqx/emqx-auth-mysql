@@ -111,15 +111,15 @@ check_acl(_) ->
 acl_super(_Config) ->
     init_auth_(),
     reload([{password_hash, plain}]),
-    {ok, C} = emqx_client:start_link([{host, "localhost"},
-                                      {client_id, <<"simpleClient">>},
-                                      {username, <<"plain">>},
-                                      {password, <<"plain">>}]),
-    {ok, _} = emqx_client:connect(C),
+    {ok, C} = emqtt:start_link([{host, "localhost"},
+                                {client_id, <<"simpleClient">>},
+                                {username, <<"plain">>},
+                                {password, <<"plain">>}]),
+    {ok, _} = emqtt:connect(C),
     timer:sleep(10),
-    emqx_client:subscribe(C, <<"TopicA">>, qos2),
+    emqtt:subscribe(C, <<"TopicA">>, qos2),
     timer:sleep(1000),
-    emqx_client:publish(C, <<"TopicA">>, <<"Payload">>, qos2),
+    emqtt:publish(C, <<"TopicA">>, <<"Payload">>, qos2),
     timer:sleep(1000),
     receive
         {publish, #{payload := Payload}} ->
@@ -129,7 +129,7 @@ acl_super(_Config) ->
             ct:fail({receive_timeout, <<"Payload">>}),
             ok
     end,
-    emqx_client:disconnect(C).
+    emqtt:disconnect(C).
 
 init_acl_() ->
     {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
