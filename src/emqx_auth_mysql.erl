@@ -1,4 +1,5 @@
-%% Copyright (c) 2013-2019 EMQ Technologies Co., Ltd. All Rights Reserved.
+%%--------------------------------------------------------------------
+%% Copyright (c) 2019 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -11,27 +12,35 @@
 %% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
+%%--------------------------------------------------------------------
 
 -module(emqx_auth_mysql).
 
 -include_lib("emqx/include/emqx.hrl").
 -include_lib("emqx/include/logger.hrl").
+-include_lib("emqx/include/types.hrl").
 
 -export([ register_metrics/0
         , check/3
         , description/0
         ]).
 
+-define(AUTH_METRICS,
+        ['auth.mysql.success',
+         'auth.mysql.failure',
+         'auth.mysql.ignore'
+        ]).
+
 -define(EMPTY(Username), (Username =:= undefined orelse Username =:= <<>>)).
 
 register_metrics() ->
-    [emqx_metrics:new(MetricName) || MetricName <- ['auth.mysql.success', 'auth.mysql.failure', 'auth.mysql.ignore']].
+    lists:foreach(fun emqx_metrics:new/1, ?AUTH_METRICS).
 
-check(Credentials = #{password := Password}, AuthResult,
+check(Client = #{password := Password}, AuthResult,
       #{auth_query  := {AuthSql, AuthParams},
         super_query := SuperQuery,
         hash_type   := HashType}) ->
-    CheckPass = case emqx_auth_mysql_cli:query(AuthSql, AuthParams, Credentials) of
+    CheckPass = case emqx_auth_mysql_cli:query(AuthSql, AuthParams, Client) of
                     {ok, [<<"password">>], [[PassHash]]} ->
                         check_pass({PassHash, Password}, HashType);
                     {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
@@ -45,7 +54,7 @@ check(Credentials = #{password := Password}, AuthResult,
     case CheckPass of
         ok ->
             emqx_metrics:inc('auth.mysql.success'),
-            {stop, AuthResult#{is_superuser => is_superuser(SuperQuery, Credentials),
+            {stop, AuthResult#{is_superuser => is_superuser(SuperQuery, Client),
                                 anonymous => false,
                                 auth_result => success}};
         {error, not_found} ->
@@ -60,10 +69,10 @@ check(Credentials = #{password := Password}, AuthResult,
 %% Is Superuser?
 %%--------------------------------------------------------------------
 
--spec(is_superuser(undefined | {string(), list()}, emqx_types:credentials()) -> boolean()).
-is_superuser(undefined, _Credentials) -> false;
-is_superuser({SuperSql, Params}, Credentials) ->
-    case emqx_auth_mysql_cli:query(SuperSql, Params, Credentials) of
+-spec(is_superuser(maybe({string(), list()}), emqx_types:client()) -> boolean()).
+is_superuser(undefined, _Client) -> false;
+is_superuser({SuperSql, Params}, Client) ->
+    case emqx_auth_mysql_cli:query(SuperSql, Params, Client) of
         {ok, [_Super], [[1]]} ->
             true;
         {ok, [_Super], [[_False]]} ->

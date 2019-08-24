@@ -1,4 +1,5 @@
-%% Copyright (c) 2013-2019 EMQ Technologies Co., Ltd. All Rights Reserved.
+%%--------------------------------------------------------------------
+%% Copyright (c) 2019 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -11,6 +12,7 @@
 %% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
+%%--------------------------------------------------------------------
 
 -module(emqx_acl_mysql).
 
@@ -24,11 +26,17 @@
         , description/0
         ]).
 
-register_metrics() ->
-    [emqx_metrics:new(MetricName) || MetricName <- ['acl.mysql.allow', 'acl.mysql.deny', 'acl.mysql.ignore']].
+-define(ACL_METRICS,
+        ['acl.mysql.allow',
+         'acl.mysql.deny',
+         'acl.mysql.ignore'
+        ]).
 
-check_acl(Credentials, PubSub, Topic, NoMatchAction, State) ->
-    case do_check_acl(Credentials, PubSub, Topic, NoMatchAction, State) of
+register_metrics() ->
+    lists:foreach(fun emqx_metrics:new/1, ?ACL_METRICS).
+
+check_acl(Client, PubSub, Topic, NoMatchAction, State) ->
+    case do_check_acl(Client, PubSub, Topic, NoMatchAction, State) of
         ok -> emqx_metrics:inc('acl.mysql.ignore'), ok;
         {stop, allow} -> emqx_metrics:inc('acl.mysql.allow'), {stop, allow};
         {stop, deny} -> emqx_metrics:inc('acl.mysql.deny'), {stop, deny}
@@ -36,12 +44,12 @@ check_acl(Credentials, PubSub, Topic, NoMatchAction, State) ->
 
 do_check_acl(#{username := <<$$, _/binary>>}, _PubSub, _Topic, _NoMatchAction, _State) ->
     ok;
-do_check_acl(Credentials, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, AclParams}}) ->
-    case emqx_auth_mysql_cli:query(AclSql, AclParams, Credentials) of
+do_check_acl(Client, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, AclParams}}) ->
+    case emqx_auth_mysql_cli:query(AclSql, AclParams, Client) of
         {ok, _Columns, []} -> ok;
         {ok, _Columns, Rows} ->
             Rules = filter(PubSub, compile(Rows)),
-            case match(Credentials, Topic, Rules) of
+            case match(Client, Topic, Rules) of
                 {matched, allow} -> {stop, allow};
                 {matched, deny}  -> {stop, deny};
                 nomatch          -> ok
@@ -54,10 +62,10 @@ do_check_acl(Credentials, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql,
 match(_Credentials, _Topic, []) ->
     nomatch;
 
-match(Credentials, Topic, [Rule|Rules]) ->
-    case emqx_access_rule:match(Credentials, Topic, Rule) of
+match(Client, Topic, [Rule|Rules]) ->
+    case emqx_access_rule:match(Client, Topic, Rule) of
         nomatch ->
-            match(Credentials, Topic, Rules);
+            match(Client, Topic, Rules);
         {matched, AllowDeny} ->
             {matched, AllowDeny}
     end.
