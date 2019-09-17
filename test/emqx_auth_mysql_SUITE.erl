@@ -82,16 +82,16 @@ groups() ->
     [{emqx_auth_mysql_auth, [sequence], [check_auth]},
      {emqx_auth_mysql_acl, [sequence], [check_acl, 
                                         acl_super]},
-     {emqx_auth_mysql, [sequence], [comment_config]}].
+     {emqx_auth_mysql, [sequence], [comment_config, placehoders]}].
 
 init_per_suite(Config) ->
-    emqx_ct_helpers:start_apps([emqx, emqx_auth_mysql], fun set_special_configs/1),
+    emqx_ct_helpers:start_apps([emqx_auth_mysql], fun set_special_configs/1),
     Config.
 
 end_per_suite(_Config) ->
     drop_table_(?DROP_AUTH_TABLE),
     drop_table_(?DROP_ACL_TABLE),
-    emqx_ct_helpers:stop_apps([emqx_auth_mysql, emqx]).
+    emqx_ct_helpers:stop_apps([emqx_auth_mysql]).
 
 check_acl(_) ->
     init_acl_(),
@@ -182,6 +182,28 @@ comment_config(_) ->
     application:stop(?APP),
     [application:unset_env(?APP, Par) || Par <- [acl_query, auth_query]],
     application:start(?APP).
+
+placehoders(_) ->
+    ClientA = #{username => <<"plain">>, client_id => <<"plain">>},
+    dbg:tracer(),dbg:p(all,call),
+    dbg:tp(mysql, query,x),
+
+    reload([{password_hash, plain},
+            {auth_query, "select password from mqtt_user where username = '%u' and 'a_cn_val' = '%C' limit 1"}]),
+    {error, not_authorized} =
+        emqx_access_control:authenticate(ClientA#{password => <<"plain">>}),
+    {error, not_authorized} =
+        emqx_access_control:authenticate(ClientA#{password => <<"plain">>, cn => undefined}),
+    {ok, _} =
+        emqx_access_control:authenticate(ClientA#{password => <<"plain">>, cn => <<"a_cn_val">>}),
+
+    reload([{auth_query, "select password from mqtt_user where username = '%u' and 'a_dn_val' = '%d' limit 1"}]),
+    {error, not_authorized} =
+        emqx_access_control:authenticate(ClientA#{password => <<"plain">>}),
+    {error, not_authorized} =
+        emqx_access_control:authenticate(ClientA#{password => <<"plain">>, dn => undefined}),
+    {ok, _} =
+        emqx_access_control:authenticate(ClientA#{password => <<"plain">>, dn => <<"a_dn_val">>}).
 
 set_cmd(Key) ->
     emqx_cli_config:run(["config", "set", string:join(["auth.mysql", Key], "."), "--app=emqx_auth_mysql"]).
