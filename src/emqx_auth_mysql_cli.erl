@@ -56,16 +56,24 @@ replvar(Params, ClientInfo) ->
 
 replvar([], _ClientInfo, Acc) ->
     lists:reverse(Acc);
+
 replvar(["'%u'" | Params], ClientInfo = #{username := Username}, Acc) ->
     replvar(Params, ClientInfo, [Username | Acc]);
-replvar(["'%c'" | Params], ClientInfo = #{clientid := ClientId}, Acc) ->
+replvar(["'%c'" | Params], ClientInfo = #{client_id := ClientId}, Acc) ->
     replvar(Params, ClientInfo, [ClientId | Acc]);
-replvar(["'%a'" | Params], ClientInfo = #{peerhost := PeerHost}, Acc) ->
-    replvar(Params, ClientInfo, [inet_parse:ntoa(PeerHost) | Acc]);
-replvar(["'%C'" | Params], ClientInfo = #{cn := CN}, Acc) ->
-    replvar(Params, ClientInfo, [CN | Acc]);
-replvar(["'%d'" | Params], ClientInfo = #{dn := DN}, Acc) ->
-    replvar(Params, ClientInfo, [DN | Acc]);
+replvar(["'%a'" | Params], ClientInfo = #{peername := {IpAddr, _}}, Acc) ->
+    replvar(Params, ClientInfo, [inet_parse:ntoa(IpAddr) | Acc]);
+replvar(["'%C'" | Params], ClientInfo, Acc) ->
+    replvar(Params, ClientInfo, [safe_get(cn, ClientInfo)| Acc]);
+replvar(["'%d'" | Params], ClientInfo, Acc) ->
+    replvar(Params, ClientInfo, [safe_get(dn, ClientInfo)| Acc]);
 replvar([Param | Params], ClientInfo, Acc) ->
     replvar(Params, ClientInfo, [Param | Acc]).
+
+safe_get(K, ClientInfo) ->
+    bin(maps:get(K, ClientInfo, undefined)).
+
+bin(A) when is_atom(A) -> atom_to_binary(A, utf8);
+bin(B) when is_binary(B) -> B;
+bin(X) -> X.
 
