@@ -48,29 +48,29 @@ parse_query(Sql) ->
 connect(Options) ->
     mysql:start_link(Options).
 
-query(Sql, Params, Credentials) ->
-    ecpool:with_client(?APP, fun(C) -> mysql:query(C, Sql, replvar(Params, Credentials)) end).
+query(Sql, Params, Client) ->
+    ecpool:with_client(?APP, fun(C) -> mysql:query(C, Sql, replvar(Params, Client)) end).
 
-replvar(Params, Credentials) ->
-    replvar(Params, Credentials, []).
+replvar(Params, Client) ->
+    replvar(Params, Client, []).
 
-replvar([], _Credentials, Acc) ->
+replvar([], _Client, Acc) ->
     lists:reverse(Acc);
-replvar(["'%u'" | Params], Credentials = #{username := Username}, Acc) ->
-    replvar(Params, Credentials, [Username | Acc]);
-replvar(["'%c'" | Params], Credentials = #{client_id := ClientId}, Acc) ->
-    replvar(Params, Credentials, [ClientId | Acc]);
-replvar(["'%a'" | Params], Credentials = #{peername := {IpAddr, _}}, Acc) ->
-    replvar(Params, Credentials, [inet_parse:ntoa(IpAddr) | Acc]);
-replvar(["'%C'" | Params], Credentials, Acc) ->
-    replvar(Params, Credentials, [safe_get(cn, Credentials)| Acc]);
-replvar(["'%d'" | Params], Credentials, Acc) ->
-    replvar(Params, Credentials, [safe_get(dn, Credentials)| Acc]);
-replvar([Param | Params], Credentials, Acc) ->
-    replvar(Params, Credentials, [Param | Acc]).
+replvar(["'%u'" | Params], Client = #{username := Username}, Acc) ->
+    replvar(Params, Client, [Username | Acc]);
+replvar(["'%c'" | Params], Client = #{client_id := ClientId}, Acc) ->
+    replvar(Params, Client, [ClientId | Acc]);
+replvar(["'%a'" | Params], Client = #{peername := {IpAddr, _}}, Acc) ->
+    replvar(Params, Client, [inet_parse:ntoa(IpAddr) | Acc]);
+replvar(["'%C'" | Params], Client, Acc) ->
+    replvar(Params, Client, [safe_get(cn, Client)| Acc]);
+replvar(["'%d'" | Params], Client, Acc) ->
+    replvar(Params, Client, [safe_get(dn, Client)| Acc]);
+replvar([Param | Params], Client, Acc) ->
+    replvar(Params, Client, [Param | Acc]).
 
-safe_get(K, Credentials) ->
-    bin(maps:get(K, Credentials, undefined)).
+safe_get(K, Client) ->
+    bin(maps:get(K, Client, undefined)).
 
 bin(A) when is_atom(A) -> atom_to_binary(A, utf8);
 bin(B) when is_binary(B) -> B;

@@ -82,7 +82,7 @@ groups() ->
     [{emqx_auth_mysql_auth, [sequence], [check_auth]},
      {emqx_auth_mysql_acl, [sequence], [check_acl, 
                                         acl_super]},
-     {emqx_auth_mysql, [sequence], [comment_config, placehoders]}].
+     {emqx_auth_mysql, [sequence], [comment_config, placeholders]}].
 
 init_per_suite(Config) ->
     emqx_ct_helpers:start_apps([emqx_auth_mysql], fun set_special_configs/1),
@@ -183,10 +183,8 @@ comment_config(_) ->
     [application:unset_env(?APP, Par) || Par <- [acl_query, auth_query]],
     application:start(?APP).
 
-placehoders(_) ->
+placeholders(_) ->
     ClientA = #{username => <<"plain">>, client_id => <<"plain">>},
-    dbg:tracer(),dbg:p(all,call),
-    dbg:tp(mysql, query,x),
 
     reload([{password_hash, plain},
             {auth_query, "select password from mqtt_user where username = '%u' and 'a_cn_val' = '%C' limit 1"}]),
