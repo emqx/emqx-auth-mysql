@@ -51,16 +51,16 @@ stop(_State) ->
     ok.
 
 load_auth_hook(AuthQuery) ->
+    ok = emqx_auth_mysql:register_metrics(),
     SuperQuery = parse_query(application:get_env(?APP, super_query, undefined)),
     {ok, HashType} = application:get_env(?APP, password_hash),
     Params = #{auth_query  => AuthQuery,
                super_query => SuperQuery,
                hash_type   => HashType},
-    emqx_auth_mysql:register_metrics(),
     emqx:hook('client.authenticate', fun emqx_auth_mysql:check/3, [Params]).
 
 load_acl_hook(AclQuery) ->
-    emqx_acl_mysql:register_metrics(),
+    ok = emqx_acl_mysql:register_metrics(),
     emqx:hook('client.check_acl', fun emqx_acl_mysql:check_acl/5, [#{acl_query => AclQuery}]).
 
 %%--------------------------------------------------------------------
