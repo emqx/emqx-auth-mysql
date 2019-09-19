@@ -59,10 +59,17 @@ replvar(["'%c'" | Params], Credentials = #{client_id := ClientId}, Acc) ->
     replvar(Params, Credentials, [ClientId | Acc]);
 replvar(["'%a'" | Params], Credentials = #{peername := {IpAddr, _}}, Acc) ->
     replvar(Params, Credentials, [inet_parse:ntoa(IpAddr) | Acc]);
-replvar(["'%C'" | Params], Credentials = #{cn := CN}, Acc) ->
-    replvar(Params, Credentials, [CN | Acc]);
-replvar(["'%d'" | Params], Credentials = #{dn := DN}, Acc) ->
-    replvar(Params, Credentials, [DN | Acc]);
+replvar(["'%C'" | Params], Credentials, Acc) ->
+    replvar(Params, Credentials, [safe_get(cn, Credentials)| Acc]);
+replvar(["'%d'" | Params], Credentials, Acc) ->
+    replvar(Params, Credentials, [safe_get(dn, Credentials)| Acc]);
 replvar([Param | Params], Credentials, Acc) ->
     replvar(Params, Credentials, [Param | Acc]).
+
+safe_get(K, Credentials) ->
+    bin(maps:get(K, Credentials, undefined)).
+
+bin(A) when is_atom(A) -> atom_to_binary(A, utf8);
+bin(B) when is_binary(B) -> B;
+bin(X) -> X.
 
