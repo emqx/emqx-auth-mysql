@@ -60,8 +60,8 @@ replvar(["'%u'" | Params], Credentials = #{username := Username}, Acc) ->
     replvar(Params, Credentials, [Username | Acc]);
 replvar(["'%c'" | Params], Credentials = #{client_id := ClientId}, Acc) ->
     replvar(Params, Credentials, [ClientId | Acc]);
-replvar(["'%a'" | Params], Credentials = #{peername := {IpAddr, _}}, Acc) ->
-    replvar(Params, Credentials, [inet_parse:ntoa(IpAddr) | Acc]);
+replvar(["'%a'" | Params], Credentials = #{peerhost := PeerHost}, Acc) ->
+    replvar(Params, Credentials, [inet_parse:ntoa(PeerHost) | Acc]);
 replvar(["'%C'" | Params], Credentials = #{cn := CN}, Acc) ->
     replvar(Params, Credentials, [CN | Acc]);
 replvar(["'%d'" | Params], Credentials = #{dn := DN}, Acc) ->
