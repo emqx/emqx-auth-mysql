@@ -32,11 +32,12 @@
          'acl.mysql.ignore'
         ]).
 
+-spec(register_metrics() -> ok).
 register_metrics() ->
     lists:foreach(fun emqx_metrics:new/1, ?ACL_METRICS).
 
-check_acl(Client, PubSub, Topic, NoMatchAction, State) ->
-    case do_check_acl(Client, PubSub, Topic, NoMatchAction, State) of
+check_acl(ClientInfo, PubSub, Topic, NoMatchAction, State) ->
+    case do_check_acl(ClientInfo, PubSub, Topic, NoMatchAction, State) of
         ok -> emqx_metrics:inc('acl.mysql.ignore'), ok;
         {stop, allow} -> emqx_metrics:inc('acl.mysql.allow'), {stop, allow};
         {stop, deny} -> emqx_metrics:inc('acl.mysql.deny'), {stop, deny}
@@ -44,12 +45,12 @@ check_acl(Client, PubSub, Topic, NoMatchAction, State) ->
 
 do_check_acl(#{username := <<$$, _/binary>>}, _PubSub, _Topic, _NoMatchAction, _State) ->
     ok;
-do_check_acl(Client, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, AclParams}}) ->
-    case emqx_auth_mysql_cli:query(AclSql, AclParams, Client) of
+do_check_acl(ClientInfo, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, AclParams}}) ->
+    case emqx_auth_mysql_cli:query(AclSql, AclParams, ClientInfo) of
         {ok, _Columns, []} -> ok;
         {ok, _Columns, Rows} ->
             Rules = filter(PubSub, compile(Rows)),
-            case match(Client, Topic, Rules) of
+            case match(ClientInfo, Topic, Rules) of
                 {matched, allow} -> {stop, allow};
                 {matched, deny}  -> {stop, deny};
                 nomatch          -> ok
@@ -62,10 +63,10 @@ do_check_acl(Client, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, AclP
 match(_Credentials, _Topic, []) ->
     nomatch;
 
-match(Client, Topic, [Rule|Rules]) ->
-    case emqx_access_rule:match(Client, Topic, Rule) of
+match(ClientInfo, Topic, [Rule|Rules]) ->
+    case emqx_access_rule:match(ClientInfo, Topic, Rule) of
         nomatch ->
-            match(Client, Topic, Rules);
+            match(ClientInfo, Topic, Rules);
         {matched, AllowDeny} ->
             {matched, AllowDeny}
     end.
