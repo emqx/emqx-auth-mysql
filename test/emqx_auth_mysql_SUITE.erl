@@ -95,18 +95,18 @@ end_per_suite(_Config) ->
 
 check_acl(_) ->
     init_acl_(),
-    User1 = #{zone => external, client_id => <<"c1">>, username => <<"u1">>, peername => {{127,0,0,1}, 1}},
-    User2 = #{zone => external, client_id => <<"c2">>, username => <<"u2">>, peername => {{127,0,0,1}, 1}},
+    User1 = #{zone => external, client_id => <<"c1">>, username => <<"u1">>, peerhost => {127,0,0,1}},
+    User2 = #{zone => external, client_id => <<"c2">>, username => <<"u2">>, peerhost => {127,0,0,1}},
     allow = emqx_access_control:check_acl(User1, subscribe, <<"t1">>),
     deny = emqx_access_control:check_acl(User2, subscribe, <<"t1">>),
 
-    User3 = #{zone => external, peername => {{10,10,0,110}, 1}, client_id => <<"c1">>, username => <<"u1">>},
-    User4 = #{zone => external, peername => {{10,10,10,110}, 1}, client_id => <<"c1">>, username => <<"u1">>},
+    User3 = #{zone => external, peerhost => {10,10,0,110}, client_id => <<"c1">>, username => <<"u1">>},
+    User4 = #{zone => external, peerhost => {10,10,10,110}, client_id => <<"c1">>, username => <<"u1">>},
     allow = emqx_access_control:check_acl(User3, subscribe, <<"t1">>),
     allow = emqx_access_control:check_acl(User3, subscribe, <<"t1">>),
     allow = emqx_access_control:check_acl(User3, subscribe, <<"t2">>),%% nomatch -> ignore -> emqx acl
     allow = emqx_access_control:check_acl(User4, subscribe, <<"t1">>),%% nomatch -> ignore -> emqx acl
-    User5 = #{zone => external, peername => {{127,0,0,1}, 1}, client_id => <<"c3">>, username => <<"u3">>},
+    User5 = #{zone => external, peerhost => {127,0,0,1}, client_id => <<"c3">>, username => <<"u3">>},
     allow = emqx_access_control:check_acl(User5, subscribe, <<"t1">>),
     allow = emqx_access_control:check_acl(User5, publish, <<"t1">>).
 
