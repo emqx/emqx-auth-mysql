@@ -60,7 +60,7 @@ do_check_acl(ClientInfo, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, 
             ok
     end.
 
-match(_Credentials, _Topic, []) ->
+match(_ClientInfo, _Topic, []) ->
     nomatch;
 
 match(ClientInfo, Topic, [Rule|Rules]) ->
