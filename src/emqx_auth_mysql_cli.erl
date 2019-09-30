@@ -48,24 +48,24 @@ parse_query(Sql) ->
 connect(Options) ->
     mysql:start_link(Options).
 
-query(Sql, Params, Credentials) ->
-    ecpool:with_client(?APP, fun(C) -> mysql:query(C, Sql, replvar(Params, Credentials)) end).
+query(Sql, Params, ClientInfo) ->
+    ecpool:with_client(?APP, fun(C) -> mysql:query(C, Sql, replvar(Params, ClientInfo)) end).
 
-replvar(Params, Credentials) ->
-    replvar(Params, Credentials, []).
+replvar(Params, ClientInfo) ->
+    replvar(Params, ClientInfo, []).
 
-replvar([], _Credentials, Acc) ->
+replvar([], _ClientInfo, Acc) ->
     lists:reverse(Acc);
-replvar(["'%u'" | Params], Credentials = #{username := Username}, Acc) ->
-    replvar(Params, Credentials, [Username | Acc]);
-replvar(["'%c'" | Params], Credentials = #{client_id := ClientId}, Acc) ->
-    replvar(Params, Credentials, [ClientId | Acc]);
-replvar(["'%a'" | Params], Credentials = #{peerhost := PeerHost}, Acc) ->
-    replvar(Params, Credentials, [inet_parse:ntoa(PeerHost) | Acc]);
-replvar(["'%C'" | Params], Credentials = #{cn := CN}, Acc) ->
-    replvar(Params, Credentials, [CN | Acc]);
-replvar(["'%d'" | Params], Credentials = #{dn := DN}, Acc) ->
-    replvar(Params, Credentials, [DN | Acc]);
-replvar([Param | Params], Credentials, Acc) ->
-    replvar(Params, Credentials, [Param | Acc]).
+replvar(["'%u'" | Params], ClientInfo = #{username := Username}, Acc) ->
+    replvar(Params, ClientInfo, [Username | Acc]);
+replvar(["'%c'" | Params], ClientInfo = #{clientid := ClientId}, Acc) ->
+    replvar(Params, ClientInfo, [ClientId | Acc]);
+replvar(["'%a'" | Params], ClientInfo = #{peerhost := PeerHost}, Acc) ->
+    replvar(Params, ClientInfo, [inet_parse:ntoa(PeerHost) | Acc]);
+replvar(["'%C'" | Params], ClientInfo = #{cn := CN}, Acc) ->
+    replvar(Params, ClientInfo, [CN | Acc]);
+replvar(["'%d'" | Params], ClientInfo = #{dn := DN}, Acc) ->
+    replvar(Params, ClientInfo, [DN | Acc]);
+replvar([Param | Params], ClientInfo, Acc) ->
+    replvar(Params, ClientInfo, [Param | Acc]).
 
