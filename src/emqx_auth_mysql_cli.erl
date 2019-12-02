@@ -59,7 +59,7 @@ replvar([], _ClientInfo, Acc) ->
 
 replvar(["'%u'" | Params], ClientInfo = #{username := Username}, Acc) ->
     replvar(Params, ClientInfo, [Username | Acc]);
-replvar(["'%c'" | Params], ClientInfo = #{client_id := ClientId}, Acc) ->
+replvar(["'%c'" | Params], ClientInfo = #{clientid := ClientId}, Acc) ->
     replvar(Params, ClientInfo, [ClientId | Acc]);
 replvar(["'%a'" | Params], ClientInfo = #{peername := {IpAddr, _}}, Acc) ->
     replvar(Params, ClientInfo, [inet_parse:ntoa(IpAddr) | Acc]);
