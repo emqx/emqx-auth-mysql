@@ -193,22 +193,6 @@ placeholders(_) ->
     {ok, _} =
         emqx_access_control:authenticate(ClientA#{password => <<"plain">>, cn => <<"a_cn_val">>}),
 
-    reload([{auth_query, "select password from mqtt_user where username = '%u' and 'a_dn_val' = '%d' limit 1"}]),
-    {error, not_authorized} =
-        emqx_access_control:authenticate(ClientA#{password => <<"plain">>}),
-    {error, not_authorized} =
-        emqx_access_control:authenticate(ClientA#{password => <<"plain">>, dn => undefined}),
-    {ok, _} =
-        emqx_access_control:authenticate(ClientA#{password => <<"plain">>, dn => <<"a_dn_val">>}),
-
-    reload([{auth_query, "select password from mqtt_user where username = '%c' and 'a_cn_val' = '%C' limit 1"}]),
-    {error, not_authorized} =
-        emqx_access_control:authenticate(ClientA#{password => <<"plain">>}),
-    {error, not_authorized} =
-        emqx_access_control:authenticate(ClientA#{password => <<"plain">>, cn => undefined}),
-    {ok, _} =
-        emqx_access_control:authenticate(ClientA#{password => <<"plain">>, cn => <<"a_cn_val">>}),
-
     reload([{auth_query, "select password from mqtt_user where username = '%c' and 'a_dn_val' = '%d' limit 1"}]),
     {error, not_authorized} =
         emqx_access_control:authenticate(ClientA#{password => <<"plain">>}),
