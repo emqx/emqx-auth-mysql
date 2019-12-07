@@ -28,7 +28,6 @@
 
 -include_lib("common_test/include/ct.hrl").
 
-%%setp1 init table
 -define(DROP_ACL_TABLE, <<"DROP TABLE IF EXISTS mqtt_acl">>).
 
 -define(CREATE_ACL_TABLE, <<"CREATE TABLE mqtt_acl ("
@@ -43,11 +42,10 @@
                             ") ENGINE=InnoDB DEFAULT CHARSET=utf8">>).
 
 -define(INIT_ACL, <<"INSERT INTO mqtt_acl (id, allow, ipaddr, username, clientid, access, topic)"
-                    "VALUES
-                            (1,1,'127.0.0.1','u1','c1',1,'t1'),"
-                            "(2,0,'127.0.0.1','u2','c2',1,'t1'),"
-                            "(3,1,'10.10.0.110','u1','c1',1,'t1'),"
-                            "(4,1,'127.0.0.1','u3','c3',3,'t1')">>).
+                    "VALUES (1,1,'127.0.0.1','u1','c1',1,'t1'),"
+                           "(2,0,'127.0.0.1','u2','c2',1,'t1'),"
+                           "(3,1,'10.10.0.110','u1','c1',1,'t1'),"
+                           "(4,1,'127.0.0.1','u3','c3',3,'t1')">>).
 
 -define(DROP_AUTH_TABLE, <<"DROP TABLE IF EXISTS `mqtt_user`">>).
 
@@ -63,14 +61,14 @@
                              ") ENGINE=MyISAM DEFAULT CHARSET=utf8">>).
 
 -define(INIT_AUTH, <<"INSERT INTO mqtt_user (id, is_superuser, username, password, salt)"
-                     "VALUES  (1, true, 'plain', 'plain', 'salt'),"
-                             "(2, false, 'md5', '1bc29b36f623ba82aaf6724fd3b16718', 'salt'),"
-                             "(3, false, 'sha', 'd8f4590320e1343a915b6394170650a8f35d6926', 'salt'),"
-                             "(4, false, 'sha256', '5d5b09f6dcb2d53a5fffc60c4ac0d55fabdf556069d6631545f42aa6e3500f2e', 'salt'),"
-                             "(5, false, 'pbkdf2_password', 'cdedb5281bb2f801565a1122b2563515', 'ATHENA.MIT.EDUraeburn'),"
-                             "(6, false, 'bcrypt_foo', '$2a$12$sSS8Eg.ovVzaHzi1nUHYK.HbUIOdlQI0iS22Q5rd5z.JVVYH6sfm6', '$2a$12$sSS8Eg.ovVzaHzi1nUHYK.'),"
-			     "(7, false, 'bcrypt', '$2y$16$rEVsDarhgHYB0TGnDFJzyu5f.T.Ha9iXMTk9J36NCMWWM7O16qyaK', 'salt'),"
-                             "(8, false, 'bcrypt_wrong', '$2y$16$rEVsDarhgHYB0TGnDFJzyu', 'salt')">>).
+                     "VALUES (1, true, 'plain', 'plain', 'salt'),"
+                            "(2, false, 'md5', '1bc29b36f623ba82aaf6724fd3b16718', 'salt'),"
+                            "(3, false, 'sha', 'd8f4590320e1343a915b6394170650a8f35d6926', 'salt'),"
+                            "(4, false, 'sha256', '5d5b09f6dcb2d53a5fffc60c4ac0d55fabdf556069d6631545f42aa6e3500f2e', 'salt'),"
+                            "(5, false, 'pbkdf2_password', 'cdedb5281bb2f801565a1122b2563515', 'ATHENA.MIT.EDUraeburn'),"
+                            "(6, false, 'bcrypt_foo', '$2a$12$sSS8Eg.ovVzaHzi1nUHYK.HbUIOdlQI0iS22Q5rd5z.JVVYH6sfm6', '$2a$12$sSS8Eg.ovVzaHzi1nUHYK.'),"
+                            "(7, false, 'bcrypt', '$2y$16$rEVsDarhgHYB0TGnDFJzyu5f.T.Ha9iXMTk9J36NCMWWM7O16qyaK', 'salt'),"
+                            "(8, false, 'bcrypt_wrong', '$2y$16$rEVsDarhgHYB0TGnDFJzyu', 'salt')">>).
 
 all() ->
     [{group, emqx_auth_mysql_acl},
@@ -141,15 +139,15 @@ init_acl_() ->
 
 check_auth(_) ->
     init_auth_(),
-    Plain = #{clientid => <<"client1">>, username => <<"plain">>},
-    Md5 = #{clientid => <<"md5">>, username => <<"md5">>},
-    Sha = #{clientid => <<"sha">>, username => <<"sha">>},
-    Sha256 = #{clientid => <<"sha256">>, username => <<"sha256">>},
-    Pbkdf2 = #{clientid => <<"pbkdf2_password">>, username => <<"pbkdf2_password">>},
-    BcryptFoo = #{clientid => <<"bcrypt_foo">>, username => <<"bcrypt_foo">>},
-    User1 = #{clientid => <<"bcrypt_foo">>, username => <<"user">>},
-    Bcrypt = #{clientid => <<"bcrypt">>, username => <<"bcrypt">>},
-    BcryptWrong = #{clientid => <<"bcrypt_wrong">>, username => <<"bcrypt_wrong">>},
+    Plain = #{clientid => <<"client1">>, username => <<"plain">>, zone => external},
+    Md5 = #{clientid => <<"md5">>, username => <<"md5">>, zone => external},
+    Sha = #{clientid => <<"sha">>, username => <<"sha">>, zone => external},
+    Sha256 = #{clientid => <<"sha256">>, username => <<"sha256">>, zone => external},
+    Pbkdf2 = #{clientid => <<"pbkdf2_password">>, username => <<"pbkdf2_password">>, zone => external},
+    BcryptFoo = #{clientid => <<"bcrypt_foo">>, username => <<"bcrypt_foo">>, zone => external},
+    User1 = #{clientid => <<"bcrypt_foo">>, username => <<"user">>, zone => external},
+    Bcrypt = #{clientid => <<"bcrypt">>, username => <<"bcrypt">>, zone => external},
+    BcryptWrong = #{clientid => <<"bcrypt_wrong">>, username => <<"bcrypt_wrong">>, zone => external},
     reload([{password_hash, plain}]),
     {ok,#{is_superuser := true}} =
         emqx_access_control:authenticate(Plain#{password => <<"plain">>}),
@@ -184,7 +182,7 @@ comment_config(_) ->
     application:start(?APP).
 
 placeholders(_) ->
-    ClientA = #{username => <<"plain">>, client_id => <<"plain">>},
+    ClientA = #{username => <<"plain">>, clientid => <<"plain">>, zone => external},
 
     reload([{password_hash, plain},
             {auth_query, "select password from mqtt_user where username = '%u' and 'a_cn_val' = '%C' limit 1"}]),
@@ -195,7 +193,7 @@ placeholders(_) ->
     {ok, _} =
         emqx_access_control:authenticate(ClientA#{password => <<"plain">>, cn => <<"a_cn_val">>}),
 
-    reload([{auth_query, "select password from mqtt_user where username = '%u' and 'a_dn_val' = '%d' limit 1"}]),
+    reload([{auth_query, "select password from mqtt_user where username = '%c' and 'a_dn_val' = '%d' limit 1"}]),
     {error, not_authorized} =
         emqx_access_control:authenticate(ClientA#{password => <<"plain">>}),
     {error, not_authorized} =
