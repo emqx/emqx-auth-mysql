@@ -139,15 +139,15 @@ init_acl_() ->
 
 check_auth(_) ->
     init_auth_(),
-    Plain = #{clientid => <<"client1">>, username => <<"plain">>},
-    Md5 = #{clientid => <<"md5">>, username => <<"md5">>},
-    Sha = #{clientid => <<"sha">>, username => <<"sha">>},
-    Sha256 = #{clientid => <<"sha256">>, username => <<"sha256">>},
-    Pbkdf2 = #{clientid => <<"pbkdf2_password">>, username => <<"pbkdf2_password">>},
-    BcryptFoo = #{clientid => <<"bcrypt_foo">>, username => <<"bcrypt_foo">>},
-    User1 = #{clientid => <<"bcrypt_foo">>, username => <<"user">>},
-    Bcrypt = #{clientid => <<"bcrypt">>, username => <<"bcrypt">>},
-    BcryptWrong = #{clientid => <<"bcrypt_wrong">>, username => <<"bcrypt_wrong">>},
+    Plain = #{clientid => <<"client1">>, username => <<"plain">>, zone => external},
+    Md5 = #{clientid => <<"md5">>, username => <<"md5">>, zone => external},
+    Sha = #{clientid => <<"sha">>, username => <<"sha">>, zone => external},
+    Sha256 = #{clientid => <<"sha256">>, username => <<"sha256">>, zone => external},
+    Pbkdf2 = #{clientid => <<"pbkdf2_password">>, username => <<"pbkdf2_password">>, zone => external},
+    BcryptFoo = #{clientid => <<"bcrypt_foo">>, username => <<"bcrypt_foo">>, zone => external},
+    User1 = #{clientid => <<"bcrypt_foo">>, username => <<"user">>, zone => external},
+    Bcrypt = #{clientid => <<"bcrypt">>, username => <<"bcrypt">>, zone => external},
+    BcryptWrong = #{clientid => <<"bcrypt_wrong">>, username => <<"bcrypt_wrong">>, zone => external},
     reload([{password_hash, plain}]),
     {ok,#{is_superuser := true}} =
         emqx_access_control:authenticate(Plain#{password => <<"plain">>}),
@@ -182,7 +182,7 @@ comment_config(_) ->
     application:start(?APP).
 
 placeholders(_) ->
-    ClientA = #{username => <<"plain">>, clientid => <<"plain">>},
+    ClientA = #{username => <<"plain">>, clientid => <<"plain">>, zone => external},
 
     reload([{password_hash, plain},
             {auth_query, "select password from mqtt_user where username = '%u' and 'a_cn_val' = '%C' limit 1"}]),
