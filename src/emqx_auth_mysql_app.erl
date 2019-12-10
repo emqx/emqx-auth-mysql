@@ -38,13 +38,11 @@ start(_StartType, _StartArgs) ->
     {ok, Sup} = emqx_auth_mysql_sup:start_link(),
     if_enabled(auth_query, fun load_auth_hook/1),
     if_enabled(acl_query,  fun load_acl_hook/1),
-    emqx_auth_mysql_cfg:register(),
     {ok, Sup}.
 
 prep_stop(State) ->
     emqx:unhook('client.authenticate', fun emqx_auth_mysql:check/3),
     emqx:unhook('client.check_acl', fun emqx_acl_mysql:check_acl/5),
-    emqx_auth_mysql_cfg:unregister(),
     State.
 
 stop(_State) ->
