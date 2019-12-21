@@ -16,6 +16,8 @@
 
 -module(emqx_acl_mysql).
 
+-include("emqx_auth_mysql.hrl").
+
 -include_lib("emqx/include/emqx.hrl").
 -include_lib("emqx/include/logger.hrl").
 
@@ -26,21 +28,15 @@
         , description/0
         ]).
 
--define(ACL_METRICS,
-        ['acl.mysql.allow',
-         'acl.mysql.deny',
-         'acl.mysql.ignore'
-        ]).
-
 -spec(register_metrics() -> ok).
 register_metrics() ->
     lists:foreach(fun emqx_metrics:new/1, ?ACL_METRICS).
 
 check_acl(ClientInfo, PubSub, Topic, NoMatchAction, State) ->
     case do_check_acl(ClientInfo, PubSub, Topic, NoMatchAction, State) of
-        ok -> emqx_metrics:inc('acl.mysql.ignore'), ok;
-        {stop, allow} -> emqx_metrics:inc('acl.mysql.allow'), {stop, allow};
-        {stop, deny} -> emqx_metrics:inc('acl.mysql.deny'), {stop, deny}
+        ok -> emqx_metrics:inc(?ACL_METRICS(ignore)), ok;
+        {stop, allow} -> emqx_metrics:inc(?ACL_METRICS(allow)), {stop, allow};
+        {stop, deny} -> emqx_metrics:inc(?ACL_METRICS(deny)), {stop, deny}
     end.
 
 do_check_acl(#{username := <<$$, _/binary>>}, _PubSub, _Topic, _NoMatchAction, _State) ->
