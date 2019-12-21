@@ -16,6 +16,8 @@
 
 -module(emqx_auth_mysql).
 
+-include("emqx_auth_mysql.hrl").
+
 -include_lib("emqx/include/emqx.hrl").
 -include_lib("emqx/include/logger.hrl").
 -include_lib("emqx/include/types.hrl").
@@ -23,12 +25,6 @@
 -export([ register_metrics/0
         , check/3
         , description/0
-        ]).
-
--define(AUTH_METRICS,
-        ['auth.mysql.success',
-         'auth.mysql.failure',
-         'auth.mysql.ignore'
         ]).
 
 -define(EMPTY(Username), (Username =:= undefined orelse Username =:= <<>>)).
@@ -54,15 +50,15 @@ check(ClientInfo = #{password := Password}, AuthResult,
                 end,
     case CheckPass of
         ok ->
-            emqx_metrics:inc('auth.mysql.success'),
+            emqx_metrics:inc(?AUTH_METRICS(success)),
             {stop, AuthResult#{is_superuser => is_superuser(SuperQuery, ClientInfo),
                                 anonymous => false,
                                 auth_result => success}};
         {error, not_found} ->
-            emqx_metrics:inc('auth.mysql.ignore'), ok;
+            emqx_metrics:inc(?AUTH_METRICS(ignore)), ok;
         {error, ResultCode} ->
             ?LOG(error, "[MySQL] Auth from mysql failed: ~p", [ResultCode]),
-            emqx_metrics:inc('auth.mysql.failure'),
+            emqx_metrics:inc(?AUTH_METRICS(failure)),
             {stop, AuthResult#{auth_result => ResultCode, anonymous => false}}
     end.
 
