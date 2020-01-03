@@ -24,7 +24,7 @@ xref:
 	$(REBAR) xref
 
 cover:
-	$(REBAR) cove
+	$(REBAR) cover
 
 distclean:
 	@rm -rf _build
