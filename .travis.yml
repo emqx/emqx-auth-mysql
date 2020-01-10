@@ -6,7 +6,7 @@ services:
   - docker
 
 install:
-  - docker-compose -f ./docker-compose-travis.yml -p tests up -d 
+  - docker-compose -f ./docker-compose.yml -p tests up -d 
 
 before_script:
   - while [[ ! -z $(docker ps -a -f name=tests_mysql_client_1 -f status=running -q) ]]; do echo "wait mysql server" && sleep 1; done
@@ -20,4 +20,4 @@ script:
   - docker exec -i $(docker ps -a -f name=tests_erlang_1 -q) sh -c "make -C /emqx_auth_mysql ct"
 
 after_script:
-  - docker-compose -f ./docker-compose-travis.yml -p tests down 
+  - docker-compose -f ./docker-compose.yml -p tests down 
