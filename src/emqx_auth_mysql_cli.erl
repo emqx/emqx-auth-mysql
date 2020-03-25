@@ -20,6 +20,7 @@
 
 -include("emqx_auth_mysql.hrl").
 -include_lib("emqx/include/emqx.hrl").
+-include_lib("emqx/include/logger.hrl").
 
 -export([ parse_query/1
         , connect/1
@@ -46,7 +47,23 @@ parse_query(Sql) ->
 %%--------------------------------------------------------------------
 
 connect(Options) ->
-    mysql:start_link(Options).
+    case mysql:start_link(Options) of
+        {ok, Pid} -> {ok, Pid};
+        ignore -> ignore;
+        {error, Reason = {{_, {error, econnrefused}}, _}} ->
+            ?LOG(error, "[MySQL] Can't connect to MySQL serve: Connection refused."),
+            {error, Reason};
+        {error, Reason = {ErrorCode, _, Error}} ->
+            ?LOG(error, "[MySQL] Can't connect to MySQL serve: ~p - ~s", [ErrorCode, Error]),
+            {error, Reason};
+        {error, Reason = timeout} ->
+            ?LOG(error, "[MySQL] Can't connect to MySQL serve: Timeout."),
+            {error, Reason};
+        {error, Reason} ->
+            ?LOG(error, "[MySQL] Can't connect to MySQL serve:: ~p", [Reason]),
+            {error, Reason};
+        Other -> Other
+    end.
 
 query(Sql, Params, ClientInfo) ->
     ecpool:with_client(?APP, fun(C) -> mysql:query(C, Sql, replvar(Params, ClientInfo)) end).
