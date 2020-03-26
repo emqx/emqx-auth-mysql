@@ -49,18 +49,18 @@ parse_query(Sql) ->
 connect(Options) ->
     case mysql:start_link(Options) of
         {ok, Pid} -> {ok, Pid};
-        ignore -> ignore;
+        ignore -> {error, ignore};
         {error, Reason = {{_, {error, econnrefused}}, _}} ->
-            ?LOG(error, "[MySQL] Can't connect to MySQL serve: Connection refused."),
+            ?LOG(error, "[MySQL] Can't connect to MySQL server: Connection refused."),
             {error, Reason};
         {error, Reason = {ErrorCode, _, Error}} ->
-            ?LOG(error, "[MySQL] Can't connect to MySQL serve: ~p - ~s", [ErrorCode, Error]),
+            ?LOG(error, "[MySQL] Can't connect to MySQL server: ~p - ~s", [ErrorCode, Error]),
             {error, Reason};
         {error, Reason = timeout} ->
-            ?LOG(error, "[MySQL] Can't connect to MySQL serve: Timeout."),
+            ?LOG(error, "[MySQL] Can't connect to MySQL server: Timeout."),
             {error, Reason};
         {error, Reason} ->
-            ?LOG(error, "[MySQL] Can't connect to MySQL serve:: ~p", [Reason]),
+            ?LOG(error, "[MySQL] Can't connect to MySQL server: ~p", [Reason]),
             {error, Reason};
         Other -> Other
     end.
