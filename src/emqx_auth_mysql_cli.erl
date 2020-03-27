@@ -54,10 +54,7 @@ connect(Options) ->
             ?LOG(error, "[MySQL] Can't connect to MySQL server: Connection refused."),
             {error, Reason};
         {error, Reason = {ErrorCode, _, Error}} ->
-            ?LOG(error, "[MySQL] Can't connect to MySQL server: ~p - ~s", [ErrorCode, Error]),
-            {error, Reason};
-        {error, Reason = timeout} ->
-            ?LOG(error, "[MySQL] Can't connect to MySQL server: Timeout."),
+            ?LOG(error, "[MySQL] Can't connect to MySQL server: ~p - ~p", [ErrorCode, Error]),
             {error, Reason};
         {error, Reason} ->
             ?LOG(error, "[MySQL] Can't connect to MySQL server: ~p", [Reason]),
