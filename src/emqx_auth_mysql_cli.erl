@@ -71,10 +71,8 @@ replvar(Params, ClientInfo) ->
 replvar([], _ClientInfo, Acc) ->
     lists:reverse(Acc);
 
-replvar(["'%u'" | Params], ClientInfo = #{username := Username}, Acc) when is_atom(Username) ->
-    replvar(Params, ClientInfo, [ atom_to_list(Username) | Acc]);
-replvar(["'%u'" | Params], ClientInfo = #{username := Username}, Acc) ->
-    replvar(Params, ClientInfo, [Username | Acc]);
+replvar(["'%u'" | Params], ClientInfo, Acc) ->
+    replvar(Params, ClientInfo, [safe_get(username, ClientInfo) | Acc]);
 replvar(["'%c'" | Params], ClientInfo = #{clientid := ClientId}, Acc) ->
     replvar(Params, ClientInfo, [ClientId | Acc]);
 replvar(["'%a'" | Params], ClientInfo = #{peername := {IpAddr, _}}, Acc) ->
