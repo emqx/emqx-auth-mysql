@@ -93,6 +93,8 @@ end_per_suite(_Config) ->
 
 check_acl(_) ->
     init_acl_(),
+    User0 = #{zone => external,peerhost => {127,0,0,1}},
+    allow = emqx_access_control:check_acl(User0, subscribe, <<"t1">>),
     User1 = #{zone => external, clientid => <<"c1">>, username => <<"u1">>, peerhost => {127,0,0,1}},
     User2 = #{zone => external, clientid => <<"c2">>, username => <<"u2">>, peerhost => {127,0,0,1}},
     allow = emqx_access_control:check_acl(User1, subscribe, <<"t1">>),

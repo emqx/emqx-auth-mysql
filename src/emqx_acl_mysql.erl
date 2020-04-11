@@ -24,7 +24,6 @@
 %% ACL Callbacks
 -export([ register_metrics/0
         , check_acl/5
-        , reload_acl/1
         , description/0
         ]).
 
@@ -107,9 +106,6 @@ topic(<<"eq ", Topic/binary>>) ->
     {eq, Topic};
 topic(Topic) ->
     Topic.
-
-reload_acl(_State) ->
-    ok.
 
 description() ->
     "ACL with Mysql".

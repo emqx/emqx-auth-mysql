@@ -71,8 +71,8 @@ replvar(Params, ClientInfo) ->
 replvar([], _ClientInfo, Acc) ->
     lists:reverse(Acc);
 
-replvar(["'%u'" | Params], ClientInfo = #{username := Username}, Acc) ->
-    replvar(Params, ClientInfo, [Username | Acc]);
+replvar(["'%u'" | Params], ClientInfo, Acc) ->
+    replvar(Params, ClientInfo, [safe_get(username, ClientInfo) | Acc]);
 replvar(["'%c'" | Params], ClientInfo = #{clientid := ClientId}, Acc) ->
     replvar(Params, ClientInfo, [ClientId | Acc]);
 replvar(["'%a'" | Params], ClientInfo = #{peername := {IpAddr, _}}, Acc) ->
@@ -85,7 +85,7 @@ replvar([Param | Params], ClientInfo, Acc) ->
     replvar(Params, ClientInfo, [Param | Acc]).
 
 safe_get(K, ClientInfo) ->
-    bin(maps:get(K, ClientInfo, undefined)).
+    bin(maps:get(K, ClientInfo, "undefined")).
 
 bin(A) when is_atom(A) -> atom_to_binary(A, utf8);
 bin(B) when is_binary(B) -> B;
