@@ -46,8 +46,8 @@ parse_query(Sql) ->
 %% MySQL Connect/Query
 %%--------------------------------------------------------------------
 
-connect(Options) ->
-    case mysql:start_link(Options) of
+connect(MysqlOptions) ->
+    case mysql:start_link(MysqlOptions) of
         {ok, Pid} -> {ok, Pid};
         ignore -> {error, ignore};
         {error, Reason = {{_, {error, econnrefused}}, _}} ->
@@ -90,4 +90,3 @@ safe_get(K, ClientInfo) ->
 bin(A) when is_atom(A) -> atom_to_binary(A, utf8);
 bin(B) when is_binary(B) -> B;
 bin(X) -> X.
-

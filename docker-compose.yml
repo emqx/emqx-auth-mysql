@@ -12,7 +12,7 @@ services:
     tty: true
 
   mysql_server:
-    image: mysql:5.7
+    image: mysql:5.7.30
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: public 
@@ -22,7 +22,7 @@ services:
     command: --bind-address 0.0.0.0
 
   mysql_client:
-    image: mysql:5.7
+    image: mysql:5.7.30
     networks:
       - emqx-bridge
     depends_on:
