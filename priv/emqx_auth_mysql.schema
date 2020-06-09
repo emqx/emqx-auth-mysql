@@ -89,3 +89,34 @@ end}.
         _                -> plain
     end
 end}.
+
+%%----------------------------------------------------------------------
+%% Mysql SSL configuretion
+%%----------------------------------------------------------------------
+
+%%
+%% Enable flag
+%%
+{mapping, "auth.mysql.ssl", "emqx_auth_mysql.ssl", [
+  {datatype, atom}
+]}.
+%%
+%% CA file
+%%
+{mapping, "auth.mysql.ssl.cafile", "emqx_auth_mysql.cafile", [
+  {datatype, string}
+]}.
+%%
+%% Cert file
+%%
+{mapping, "auth.mysql.ssl.certfile", "emqx_auth_mysql.certfile", [
+  {datatype, string}
+]}.
+%%
+%% Key file
+%%
+{mapping, "auth.mysql.ssl.keyfile", "emqx_auth_mysql.keyfile", [
+  {datatype, string}
+]}.
+
+

@@ -47,7 +47,17 @@ parse_query(Sql) ->
 %%--------------------------------------------------------------------
 
 connect(Options) ->
-    case mysql:start_link(Options) of
+    EnableSSL = application:get_env(?APP, ssl, off),
+    MysqlOptions = case EnableSSL of
+        on ->
+            {ok, CA} = application:get_env(?APP, cafile),
+            {ok, Cert} = application:get_env(?APP, certfile),
+            {ok, Key} = application:get_env(?APP, keyfile),
+            Options ++ [{server_name_indication, disable}, {ssl, {cacertfile, CA}, {certfile, Cert}, {keyfile, Key}}];
+        _ ->
+            Options
+    end,
+    case mysql:start_link(MysqlOptions) of
         {ok, Pid} -> {ok, Pid};
         ignore -> {error, ignore};
         {error, Reason = {{_, {error, econnrefused}}, _}} ->
@@ -90,4 +100,3 @@ safe_get(K, ClientInfo) ->
 bin(A) when is_atom(A) -> atom_to_binary(A, utf8);
 bin(B) when is_binary(B) -> B;
 bin(X) -> X.
-

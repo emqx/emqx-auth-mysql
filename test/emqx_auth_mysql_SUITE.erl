@@ -71,16 +71,23 @@
                             "(8, false, 'bcrypt_wrong', '$2y$16$rEVsDarhgHYB0TGnDFJzyu', 'salt')">>).
 
 all() ->
-    [{group, emqx_auth_mysql_acl},
-     {group, emqx_auth_mysql_auth},
-     {group, emqx_auth_mysql}
-    ].
+    [{group, normal},
+     {group, ssl}].
 
 groups() ->
-    [{emqx_auth_mysql_auth, [sequence], [check_auth]},
-     {emqx_auth_mysql_acl, [sequence], [check_acl, 
-                                        acl_super]},
-     {emqx_auth_mysql, [sequence], [comment_config, placeholders]}].
+    Cases = [check_auth, check_acl, acl_super, comment_config, placeholders],
+    [{normal, [sequence], Cases}, {ssl, [sequence], Cases}].
+
+init_per_group(ssl, Config) ->
+    emqx_ct_helpers:start_apps([emqx_auth_mysql], fun set_special_configs_ssl/1),
+    Config;
+
+init_per_group(normal, Config) ->
+    emqx_ct_helpers:start_apps([emqx_auth_mysql], fun set_special_configs/1),
+    Config.
+
+end_per_group(_, _Config) ->
+    shutd_down.
 
 init_per_suite(Config) ->
     emqx_ct_helpers:start_apps([emqx_auth_mysql], fun set_special_configs/1),
@@ -224,10 +231,29 @@ reload(Config) when is_list(Config) ->
     ct:pal("~p: all configs after: ~p ", [?APP, application:get_all_env(?APP)]),
     application:start(?APP).
 
+
+%% Mysql SSL
+set_special_configs_ssl(emqx) ->
+    application:set_env(emqx, allow_anonymous, false),
+    application:set_env(emqx, enable_acl_cache, false),
+    application:set_env(emqx_auth_mysql, ssl, on),
+
+    %% CA file
+    application:set_env(emqx_auth_mysql, cafile, "./emqx_auth_mysql_SUITE_data/ca.pem"),
+    %% CertFile
+    application:set_env(emqx_auth_mysql, certfile,"./emqx_auth_mysql_SUITE_data/client-cert.pem"),
+    %% KeyFile
+    application:set_env(emqx_auth_mysql, keyfile, "./emqx_auth_mysql_SUITE_data/client-key.pem"),    
+    %% Loaded Plugins               
+    application:set_env(emqx, plugins_loaded_file,
+                        emqx_ct_helpers:deps_path(emqx, "deps/emqx/test/emqx_SUITE_data/loaded_plugins")).
+%% Mysql normal
 set_special_configs(emqx) ->
+    application:set_env(emqx_auth_mysql, ssl, off),
     application:set_env(emqx, allow_anonymous, false),
     application:set_env(emqx, enable_acl_cache, false),
     application:set_env(emqx, plugins_loaded_file,
                         emqx_ct_helpers:deps_path(emqx, "deps/emqx/test/emqx_SUITE_data/loaded_plugins"));
+
 set_special_configs(_App) ->
     ok.
