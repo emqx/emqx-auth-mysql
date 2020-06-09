@@ -38,6 +38,7 @@ start(_StartType, _StartArgs) ->
     {ok, Sup} = emqx_auth_mysql_sup:start_link(),
     if_enabled(auth_query, fun load_auth_hook/1),
     if_enabled(acl_query,  fun load_acl_hook/1),
+
     {ok, Sup}.
 
 prep_stop(State) ->
@@ -70,4 +71,3 @@ if_enabled(Cfg, Fun) ->
         {ok, Query} -> Fun(parse_query(Query));
         undefined   -> ok
     end.
-
