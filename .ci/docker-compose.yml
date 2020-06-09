@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  erlang:
+    image: erlang:22.3
+    volumes:
+      - ../:/emqx_auth_mysql
+    networks:
+      - emqx_bridge
+    depends_on:
+      - mysql_server
+    tty: true
+
+  mysql_server:
+    image: ${MYSQL_IMAGE}
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: public 
+      MYSQL_DATABASE: mqtt
+    volumes:
+      - ./ssl.cnf:/etc/mysql/mysql.conf.d/ssl.cnf
+      - ../test/emqx_auth_mysql_SUITE_data/ca.pem:/etc/mysql/ca-cert.pem
+      - ../test/emqx_auth_mysql_SUITE_data/server-cert.pem:/etc/mysql/server-cert.pem
+      - ../test/emqx_auth_mysql_SUITE_data/server-key.pem:/etc/mysql/server-key.pem
+    networks:
+      - emqx_bridge
+    command: --bind-address 0.0.0.0 --default-authentication-plugin=mysql_native_password
+
+networks:
+  emqx_bridge:
+    driver: bridge
