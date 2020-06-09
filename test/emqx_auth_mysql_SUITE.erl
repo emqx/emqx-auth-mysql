@@ -243,8 +243,8 @@ set_special_configs_ssl(emqx) ->
     %% CertFile
     application:set_env(emqx_auth_mysql, certfile,"./emqx_auth_mysql_SUITE_data/client-cert.pem"),
     %% KeyFile
-    application:set_env(emqx_auth_mysql, keyfile, "./emqx_auth_mysql_SUITE_data/client-key.pem"),    
-    %% Loaded Plugins               
+    application:set_env(emqx_auth_mysql, keyfile, "./emqx_auth_mysql_SUITE_data/client-key.pem"),
+    %% Loaded Plugins
     application:set_env(emqx, plugins_loaded_file,
                         emqx_ct_helpers:deps_path(emqx, "deps/emqx/test/emqx_SUITE_data/loaded_plugins")).
 %% Mysql normal
