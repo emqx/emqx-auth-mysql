@@ -46,17 +46,7 @@ parse_query(Sql) ->
 %% MySQL Connect/Query
 %%--------------------------------------------------------------------
 
-connect(Options) ->
-    EnableSSL = application:get_env(?APP, ssl, off),
-    MysqlOptions = case EnableSSL of
-        on ->
-            {ok, CA} = application:get_env(?APP, cafile),
-            {ok, Cert} = application:get_env(?APP, certfile),
-            {ok, Key} = application:get_env(?APP, keyfile),
-            Options ++ [{server_name_indication, disable}, {ssl, {cacertfile, CA}, {certfile, Cert}, {keyfile, Key}}];
-        _ ->
-            Options
-    end,
+connect(MysqlOptions) ->
     case mysql:start_link(MysqlOptions) of
         {ok, Pid} -> {ok, Pid};
         ignore -> {error, ignore};

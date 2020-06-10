@@ -30,6 +30,27 @@
   {datatype, string}
 ]}.
 
+
+{mapping, "auth.mysql.ssl", "emqx_auth_mysql.server", [
+  {default, off},
+  {datatype, flag}
+]}.
+
+{mapping, "auth.mysql.ssl.cafile", "emqx_auth_mysql.server", [
+  {default, "./cafile"},
+  {datatype, string}
+]}.
+
+{mapping, "auth.mysql.ssl.certfile", "emqx_auth_mysql.server", [
+  {default, "./certfile"},
+  {datatype, string}
+]}.
+
+{mapping, "auth.mysql.ssl.keyfile", "emqx_auth_mysql.server", [
+  {default, "./keyfile"},
+  {datatype, string}
+]}.
+
 {translation, "emqx_auth_mysql.server", fun(Conf) ->
   {MyHost, MyPort} =
   case cuttlefish:conf_get("auth.mysql.server", Conf) of
@@ -51,16 +72,30 @@
                       Ms when is_integer(Ms) -> Ms
                   end
             end,
-  [{pool_size, Pool},
-   {auto_reconnect, 1},
-   {host, MyHost},
-   {port, MyPort},
-   {user, Username},
-   {password, Passwd},
-   {database, DB},
-   {encoding, utf8},
-   {query_timeout, Timeout},
-   {keep_alive, true}]
+  Options = [{pool_size, Pool},
+              {auto_reconnect, 1},
+              {host, MyHost},
+              {port, MyPort},
+              {user, Username},
+              {password, Passwd},
+              {database, DB},
+              {encoding, utf8},
+              {query_timeout, Timeout},
+              {keep_alive, true}],
+  EnableSSL = cuttlefish:conf_get("auth.mysql.ssl", Conf),
+  MysqlOptions = case EnableSSL of
+        true ->
+            CA = cuttlefish:conf_get("auth.mysql.cafile", Conf),
+            Cert = cuttlefish:conf_get("auth.mysql.certfile", Conf),
+            Key = cuttlefish:conf_get("auth.mysql.keyfile", Conf),
+            Options ++ [{server_name_indication, disable}, {ssl, 
+                                                              {cacertfile, CA}, 
+                                                              {certfile, Cert}, 
+                                                              {keyfile, Key}}];
+        _ ->
+            Options
+  end,
+  MysqlOptions
 end}.
 
 
@@ -89,34 +124,3 @@ end}.
         _                -> plain
     end
 end}.
-
-%%----------------------------------------------------------------------
-%% Mysql SSL configuretion
-%%----------------------------------------------------------------------
-
-%%
-%% Enable flag
-%%
-{mapping, "auth.mysql.ssl", "emqx_auth_mysql.ssl", [
-  {datatype, atom}
-]}.
-%%
-%% CA file
-%%
-{mapping, "auth.mysql.ssl.cafile", "emqx_auth_mysql.cafile", [
-  {datatype, string}
-]}.
-%%
-%% Cert file
-%%
-{mapping, "auth.mysql.ssl.certfile", "emqx_auth_mysql.certfile", [
-  {datatype, string}
-]}.
-%%
-%% Key file
-%%
-{mapping, "auth.mysql.ssl.keyfile", "emqx_auth_mysql.keyfile", [
-  {datatype, string}
-]}.
-
-

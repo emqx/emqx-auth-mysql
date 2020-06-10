@@ -39,7 +39,7 @@
                             "   access int(2) NOT NULL COMMENT '1: subscribe, 2: publish, 3: pubsub',"
                             "   topic varchar(100) NOT NULL DEFAULT '' COMMENT 'Topic Filter',"
                             "   PRIMARY KEY (`id`)"
-                            ") ENGINE=InnoDB DEFAULT CHARSET=utf8">>).
+                            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4">>).
 
 -define(INIT_ACL, <<"INSERT INTO mqtt_acl (id, allow, ipaddr, username, clientid, access, topic)"
                     "VALUES (1,1,'127.0.0.1','u1','c1',1,'t1'),"
@@ -58,17 +58,17 @@
                              "`created` datetime DEFAULT NULL,"
                              "PRIMARY KEY (`id`),"
                              "UNIQUE KEY `mqtt_username` (`username`)"
-                             ") ENGINE=MyISAM DEFAULT CHARSET=utf8">>).
+                             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4">>).
 
 -define(INIT_AUTH, <<"INSERT INTO mqtt_user (id, is_superuser, username, password, salt)"
-                     "VALUES (1, true, 'plain', 'plain', 'salt'),"
-                            "(2, false, 'md5', '1bc29b36f623ba82aaf6724fd3b16718', 'salt'),"
-                            "(3, false, 'sha', 'd8f4590320e1343a915b6394170650a8f35d6926', 'salt'),"
-                            "(4, false, 'sha256', '5d5b09f6dcb2d53a5fffc60c4ac0d55fabdf556069d6631545f42aa6e3500f2e', 'salt'),"
-                            "(5, false, 'pbkdf2_password', 'cdedb5281bb2f801565a1122b2563515', 'ATHENA.MIT.EDUraeburn'),"
-                            "(6, false, 'bcrypt_foo', '$2a$12$sSS8Eg.ovVzaHzi1nUHYK.HbUIOdlQI0iS22Q5rd5z.JVVYH6sfm6', '$2a$12$sSS8Eg.ovVzaHzi1nUHYK.'),"
-                            "(7, false, 'bcrypt', '$2y$16$rEVsDarhgHYB0TGnDFJzyu5f.T.Ha9iXMTk9J36NCMWWM7O16qyaK', 'salt'),"
-                            "(8, false, 'bcrypt_wrong', '$2y$16$rEVsDarhgHYB0TGnDFJzyu', 'salt')">>).
+                     "VALUES (1, 1, 'plain', 'plain', 'salt'),"
+                            "(2, 0, 'md5', '1bc29b36f623ba82aaf6724fd3b16718', 'salt'),"
+                            "(3, 0, 'sha', 'd8f4590320e1343a915b6394170650a8f35d6926', 'salt'),"
+                            "(4, 0, 'sha256', '5d5b09f6dcb2d53a5fffc60c4ac0d55fabdf556069d6631545f42aa6e3500f2e', 'salt'),"
+                            "(5, 0, 'pbkdf2_password', 'cdedb5281bb2f801565a1122b2563515', 'ATHENA.MIT.EDUraeburn'),"
+                            "(6, 0, 'bcrypt_foo', '$2a$12$sSS8Eg.ovVzaHzi1nUHYK.HbUIOdlQI0iS22Q5rd5z.JVVYH6sfm6', '$2a$12$sSS8Eg.ovVzaHzi1nUHYK.'),"
+                            "(7, 0, 'bcrypt', '$2y$16$rEVsDarhgHYB0TGnDFJzyu5f.T.Ha9iXMTk9J36NCMWWM7O16qyaK', 'salt'),"
+                            "(8, 0, 'bcrypt_wrong', '$2y$16$rEVsDarhgHYB0TGnDFJzyu', 'salt')">>).
 
 all() ->
     [{group, normal},
@@ -87,7 +87,7 @@ init_per_group(normal, Config) ->
     Config.
 
 end_per_group(_, _Config) ->
-    shutd_down.
+    shutdown.
 
 init_per_suite(Config) ->
     emqx_ct_helpers:start_apps([emqx_auth_mysql], fun set_special_configs/1),
@@ -232,24 +232,17 @@ reload(Config) when is_list(Config) ->
     application:start(?APP).
 
 
-%% Mysql SSL
-set_special_configs_ssl(emqx) ->
-    application:set_env(emqx, allow_anonymous, false),
-    application:set_env(emqx, enable_acl_cache, false),
+set_special_configs_ssl(_) ->
+    set_special_configs(emqx_auth_mysql),
     application:set_env(emqx_auth_mysql, ssl, on),
+    application:set_env(emqx_auth_mysql, cafile, 
+    "/Users/wangwenhai/github/emqx-auth-mysql/test/emqx_auth_mysql_SUITE_data/ca.pem"),
+    application:set_env(emqx_auth_mysql, certfile,
+    "/Users/wangwenhai/github/emqx-auth-mysql/test/emqx_auth_mysql_SUITE_data/client-cert.pem"),
+    application:set_env(emqx_auth_mysql, keyfile,
+    "/Users/wangwenhai/github/emqx-auth-mysql/test/emqx_auth_mysql_SUITE_data/client-key.pem").
 
-    %% CA file
-    application:set_env(emqx_auth_mysql, cafile, "./emqx_auth_mysql_SUITE_data/ca.pem"),
-    %% CertFile
-    application:set_env(emqx_auth_mysql, certfile,"./emqx_auth_mysql_SUITE_data/client-cert.pem"),
-    %% KeyFile
-    application:set_env(emqx_auth_mysql, keyfile, "./emqx_auth_mysql_SUITE_data/client-key.pem"),
-    %% Loaded Plugins
-    application:set_env(emqx, plugins_loaded_file,
-                        emqx_ct_helpers:deps_path(emqx, "deps/emqx/test/emqx_SUITE_data/loaded_plugins")).
-%% Mysql normal
-set_special_configs(emqx) ->
-    application:set_env(emqx_auth_mysql, ssl, off),
+set_special_configs(_) ->
     application:set_env(emqx, allow_anonymous, false),
     application:set_env(emqx, enable_acl_cache, false),
     application:set_env(emqx, plugins_loaded_file,
