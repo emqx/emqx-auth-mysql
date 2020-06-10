@@ -76,7 +76,7 @@ all() ->
 
 groups() ->
     Cases = [check_auth, check_acl, acl_super, comment_config, placeholders],
-    [{normal, [sequence], Cases}, 
+    [{normal, [sequence], Cases},
     {ssl, [sequence], Cases}].
 
 init_per_group(ssl, Config) ->
