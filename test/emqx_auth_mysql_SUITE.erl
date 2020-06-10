@@ -76,7 +76,8 @@ all() ->
 
 groups() ->
     Cases = [check_auth, check_acl, acl_super, comment_config, placeholders],
-    [{normal, [sequence], Cases}, {ssl, [sequence], Cases}].
+    [{normal, [sequence], Cases}, 
+    {ssl, [sequence], Cases}].
 
 init_per_group(ssl, Config) ->
     emqx_ct_helpers:start_apps([emqx_auth_mysql], fun set_special_configs_ssl/1),
@@ -147,6 +148,8 @@ init_acl_() ->
     ok = mysql:query(Pid, ?INIT_ACL).
 
 check_auth(_) ->
+    Config = application:get_env(emqx_auth_mysql, server),
+    io:format("SSL CONFIG:~p~n",[Config]),
     init_auth_(),
     Plain = #{clientid => <<"client1">>, username => <<"plain">>, zone => external},
     Md5 = #{clientid => <<"md5">>, username => <<"md5">>, zone => external},
@@ -234,13 +237,15 @@ reload(Config) when is_list(Config) ->
 
 set_special_configs_ssl(_) ->
     set_special_configs(emqx_auth_mysql),
-    application:set_env(emqx_auth_mysql, ssl, on),
-    application:set_env(emqx_auth_mysql, cafile, 
-    "/Users/wangwenhai/github/emqx-auth-mysql/test/emqx_auth_mysql_SUITE_data/ca.pem"),
-    application:set_env(emqx_auth_mysql, certfile,
-    "/Users/wangwenhai/github/emqx-auth-mysql/test/emqx_auth_mysql_SUITE_data/client-cert.pem"),
-    application:set_env(emqx_auth_mysql, keyfile,
-    "/Users/wangwenhai/github/emqx-auth-mysql/test/emqx_auth_mysql_SUITE_data/client-key.pem").
+    {ok, MysqlConfig} = application:get_env(emqx_auth_mysql, server),
+    SSLConfig = MysqlConfig ++ [{enable_ssl, on},
+                                {server_name_indication, disable}, 
+                                {ssl,[{server_name_indication,disable},
+                                      {cacertfile,"/Users/wangwenhai/github/trump/config/ca.pem"},
+                                      {certfile,"/Users/wangwenhai/github/trump/config/client-cert.pem"},
+                                      {keyfile,"/Users/wangwenhai/github/trump/config/client-key.pem"}]}],
+
+    application:set_env(emqx_auth_mysql, server, SSLConfig).
 
 set_special_configs(_) ->
     application:set_env(emqx, allow_anonymous, false),

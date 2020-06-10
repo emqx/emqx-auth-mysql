@@ -31,23 +31,23 @@
 ]}.
 
 
-{mapping, "auth.mysql.ssl", "emqx_auth_mysql.server", [
+{mapping, "auth.mysql.enable_ssl", "emqx_auth_mysql.server", [
   {default, off},
   {datatype, flag}
 ]}.
 
 {mapping, "auth.mysql.ssl.cafile", "emqx_auth_mysql.server", [
-  {default, "./cafile"},
+  {default, ""},
   {datatype, string}
 ]}.
 
 {mapping, "auth.mysql.ssl.certfile", "emqx_auth_mysql.server", [
-  {default, "./certfile"},
+  {default, ""},
   {datatype, string}
 ]}.
 
 {mapping, "auth.mysql.ssl.keyfile", "emqx_auth_mysql.server", [
-  {default, "./keyfile"},
+  {default, ""},
   {datatype, string}
 ]}.
 
@@ -82,20 +82,19 @@
               {encoding, utf8},
               {query_timeout, Timeout},
               {keep_alive, true}],
-  EnableSSL = cuttlefish:conf_get("auth.mysql.ssl", Conf),
-  MysqlOptions = case EnableSSL of
+  EnableSSL = cuttlefish:conf_get("auth.mysql.enable_ssl", Conf),
+  case EnableSSL of
         true ->
-            CA = cuttlefish:conf_get("auth.mysql.cafile", Conf),
-            Cert = cuttlefish:conf_get("auth.mysql.certfile", Conf),
-            Key = cuttlefish:conf_get("auth.mysql.keyfile", Conf),
-            Options ++ [{server_name_indication, disable}, {ssl, 
-                                                              {cacertfile, CA}, 
-                                                              {certfile, Cert}, 
+            CA = cuttlefish:conf_get("auth.mysql.ssl.cafile", Conf),
+            Cert = cuttlefish:conf_get("auth.mysql.ssl.certfile", Conf),
+            Key = cuttlefish:conf_get("auth.mysql.ssl.keyfile", Conf),
+            Options ++ [{server_name_indication, disable}, {ssl,
+                                                              {cacertfile, CA},
+                                                              {certfile, Cert},
                                                               {keyfile, Key}}];
         _ ->
             Options
-  end,
-  MysqlOptions
+  end
 end}.
 
 
