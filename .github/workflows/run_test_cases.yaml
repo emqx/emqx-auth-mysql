@@ -27,6 +27,8 @@ jobs:
                 docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "sed -i '/auth.mysql.server/c auth.mysql.server = mysql_server:3306' /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
                 docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.username = root' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf "
                 docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.password = public' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
+ 
+                docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.ssl = on' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
                 docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "make -C /emqx_auth_mysql xref"
                 docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "make -C /emqx_auth_mysql eunit"
                 docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "make -C /emqx_auth_mysql ct"

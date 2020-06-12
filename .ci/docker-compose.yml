@@ -15,7 +15,7 @@ services:
     image: ${MYSQL_IMAGE}
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: public 
+      MYSQL_ROOT_PASSWORD: public
       MYSQL_DATABASE: mqtt
     volumes:
       - ./ssl.cnf:/etc/mysql/mysql.conf.d/ssl.cnf

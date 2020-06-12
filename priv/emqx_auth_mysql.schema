@@ -86,8 +86,8 @@
             CA = cuttlefish:conf_get("auth.mysql.ssl.cafile", Conf),
             Cert = cuttlefish:conf_get("auth.mysql.ssl.certfile", Conf),
             Key = cuttlefish:conf_get("auth.mysql.ssl.keyfile", Conf),
-            Options ++ [{server_name_indication, disable},
-                        {ssl, {cacertfile, CA},
+            Options ++ [{ssl, {server_name_indication, disable},
+                              {cacertfile, CA},
                               {certfile, Cert},
                               {keyfile, Key}}];
         _ ->

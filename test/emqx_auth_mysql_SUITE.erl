@@ -93,9 +93,10 @@ end_per_group(_, Config) ->
 init_per_suite(Config) ->
     Config.
 
-end_per_suite(_Config) ->
-    drop_table_(?DROP_AUTH_TABLE),
-    drop_table_(?DROP_ACL_TABLE).
+end_per_suite(_) -> ok.
+% end_per_suite(_Config) ->
+%     drop_table_(?DROP_AUTH_TABLE),
+%     drop_table_(?DROP_ACL_TABLE).
 
 %%--------------------------------------------------------------------
 %% Test cases
@@ -122,7 +123,8 @@ check_acl(_) ->
 
 acl_super(_Config) ->
     init_auth_(),
-    reload([{password_hash, plain}]),
+    reload([{password_hash, plain},
+            {auth_query, "select password from mqtt_user where username = '%u' limit 1"}]),
     {ok, C} = emqtt:start_link([{host, "localhost"},
                                 {clientid, <<"simpleClient">>},
                                 {username, <<"plain">>},
@@ -150,8 +152,6 @@ init_acl_() ->
     ok = mysql:query(Pid, ?INIT_ACL).
 
 check_auth(_) ->
-    Config = application:get_env(emqx_auth_mysql, server),
-    io:format("SSL CONFIG:~p~n",[Config]),
     init_auth_(),
     Plain = #{clientid => <<"client1">>, username => <<"plain">>, zone => external},
     Md5 = #{clientid => <<"md5">>, username => <<"md5">>, zone => external},
@@ -238,12 +238,10 @@ reload(Config) when is_list(Config) ->
 
 set_special_configs_ssl(emqx_auth_mysql) ->
     Cfg = application:get_env(emqx_auth_mysql, server, []),
-    SslCfg = [{server_name_indication, disable},
-              {ssl,[{server_name_indication,disable},
-                    {cacertfile,"/Users/wangwenhai/github/trump/config/ca.pem"},
-                    {certfile,"/Users/wangwenhai/github/trump/config/client-cert.pem"},
-                    {keyfile,"/Users/wangwenhai/github/trump/config/client-key.pem"}]}],
-
+    SslCfg = [{server_name_indication, disable}, {ssl,[{server_name_indication,disable},
+                        {cacertfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/ca.pem")},
+                        {certfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-cert.pem")},
+                        {keyfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-key.pem")}]}],
     application:set_env(emqx_auth_mysql, server, Cfg ++ SslCfg);
 
 set_special_configs_ssl(emqx) ->
