@@ -241,9 +241,9 @@ set_special_configs_ssl(emqx_auth_mysql) ->
     SslCfg = [{user, "root"},
               {password, "public"},
               {ssl, {server_name_indication, disable},
-                    {cacertfile,emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/ca.pem"},
-                    {certfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-cert.pem"},
-                    {keyfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-key.pem"}}],
+                    {cacertfile,emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/ca.pem")},
+                    {certfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-cert.pem")},
+                    {keyfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-key.pem")}}],
     application:set_env(emqx_auth_mysql, server, Cfg ++ SslCfg);
 
 set_special_configs_ssl(emqx) ->
