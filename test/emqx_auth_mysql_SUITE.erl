@@ -238,10 +238,12 @@ reload(Config) when is_list(Config) ->
 
 set_special_configs_ssl(emqx_auth_mysql) ->
     Cfg = application:get_env(emqx_auth_mysql, server, []),
-    SslCfg = [{server_name_indication, disable}, {ssl,[{server_name_indication,disable},
-                        {cacertfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/ca.pem")},
-                        {certfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-cert.pem")},
-                        {keyfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-key.pem")}]}],
+    SslCfg = [{user, "root"},
+              {password, "public"},
+              {ssl, {server_name_indication, disable},
+                    {cacertfile,emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/ca.pem"},
+                    {certfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-cert.pem"},
+                    {keyfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-key.pem"}}],
     application:set_env(emqx_auth_mysql, server, Cfg ++ SslCfg);
 
 set_special_configs_ssl(emqx) ->
@@ -251,7 +253,7 @@ set_special_configs(emqx) ->
     application:set_env(emqx, allow_anonymous, false),
     application:set_env(emqx, enable_acl_cache, false),
     application:set_env(emqx, plugins_loaded_file,
-                        emqx_ct_helpers:deps_path(emqx, "deps/emqx/test/emqx_SUITE_data/loaded_plugins"));
+                        emqx_ct_helpers:deps_path(emqx, "/test/emqx_SUITE_data/loaded_plugins"));
 
 set_special_configs(_App) ->
     ok.

@@ -28,7 +28,6 @@ jobs:
                 docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.username = root' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf "
                 docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.password = public' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
  
-                docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.ssl = on' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
                 docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.ssl.cafile = /emqx_auth_mysql/test/emqx_auth_mysql_SUITE_data/ca.pem' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
                 docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.ssl.certfile = /emqx_auth_mysql/test/emqx_auth_mysql_SUITE_data/client-cert.pem' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
                 docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.ssl.keyfile = /emqx_auth_mysql/test/emqx_auth_mysql_SUITE_data/client-key.pem' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
