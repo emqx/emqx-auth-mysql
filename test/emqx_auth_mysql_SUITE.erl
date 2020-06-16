@@ -93,7 +93,8 @@ end_per_group(_, Config) ->
 init_per_suite(Config) ->
     Config.
 
-end_per_suite(_) -> ok.
+end_per_suite(_) ->
+    ok.
 %%--------------------------------------------------------------------
 %% Test cases
 %%--------------------------------------------------------------------
@@ -235,7 +236,7 @@ reload(Config) when is_list(Config) ->
 set_special_configs_ssl(emqx_auth_mysql) ->
     Cfg = application:get_env(emqx_auth_mysql, server, []),
     SslCfg = [{ssl, {server_name_indication, disable},
-                    {cacertfile,emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/ca.pem")},
+                    {cacertfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/ca.pem")},
                     {certfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-cert.pem")},
                     {keyfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-key.pem")}}],
     application:set_env(emqx_auth_mysql, server, Cfg ++ SslCfg);
