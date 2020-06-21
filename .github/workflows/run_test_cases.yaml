@@ -6,6 +6,12 @@ jobs:
     run_test_cases:
         runs-on: ubuntu-latest
       
+        strategy:
+          matrix:
+            mysql_image:
+              - mysql:5.7
+              - mysql:8
+
         steps:
             - name: install docker-compose
               run: | 
@@ -13,20 +19,27 @@ jobs:
                 sudo chmod +x /usr/local/bin/docker-compose
             - uses: actions/checkout@v1
             - name: run test cases
+              env:
+                MYSQL_IMAGE: ${{ matrix.mysql_image }}
               run: |
-                docker-compose -f ./docker-compose.yml -p tests up -d
-                while [[ ! -z $(docker ps -a -f name=tests_mysql_client_1 -f status=running -q) ]]; do echo "wait mysql server" && sleep 1; done
-                docker exec -i $(docker ps -a -f name=tests_erlang_1 -q) sh -c "sed -i '/auth.mysql.server/c auth.mysql.server = mysql_server:3306' /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
-                docker exec -i $(docker ps -a -f name=tests_erlang_1 -q) sh -c "echo 'auth.mysql.username = root' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf "
-                docker exec -i $(docker ps -a -f name=tests_erlang_1 -q) sh -c "echo 'auth.mysql.password = public' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
-                docker exec -i $(docker ps -a -f name=tests_erlang_1 -q) sh -c "make -C /emqx_auth_mysql xref"
-                docker exec -i $(docker ps -a -f name=tests_erlang_1 -q) sh -c "make -C /emqx_auth_mysql eunit"
-                docker exec -i $(docker ps -a -f name=tests_erlang_1 -q) sh -c "make -C /emqx_auth_mysql ct"
-                docker exec -i $(docker ps -a -f name=tests_erlang_1 -q) sh -c "make -C /emqx_auth_mysql cover"
+                docker-compose -f .ci/docker-compose.yml -p test up -d
+                while [[ ! -z $(docker ps -a -f name=test_mysql_client_1 -f status=running -q) ]]; do echo "wait mysql server" && sleep 1; done
+                docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "sed -i '/auth.mysql.server/c auth.mysql.server = mysql_server:3306' /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
+                docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.username = root' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf "
+                docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.password = public' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
+ 
+                docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.ssl.cafile = /emqx_auth_mysql/test/emqx_auth_mysql_SUITE_data/ca.pem' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
+                docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.ssl.certfile = /emqx_auth_mysql/test/emqx_auth_mysql_SUITE_data/client-cert.pem' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
+                docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.ssl.keyfile = /emqx_auth_mysql/test/emqx_auth_mysql_SUITE_data/client-key.pem' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
+
+                docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "make -C /emqx_auth_mysql xref"
+                docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "make -C /emqx_auth_mysql eunit"
+                docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "make -C /emqx_auth_mysql ct"
+                docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "make -C /emqx_auth_mysql cover"
             - uses: actions/upload-artifact@v1
               if: always()
               with:
-                name: logs
+                name: logs_for_${{ matrix.mysql_image }}
                 path: _build/test/logs
             - uses: actions/upload-artifact@v1
               with:
