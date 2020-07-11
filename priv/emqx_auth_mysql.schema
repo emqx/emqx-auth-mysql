@@ -92,6 +92,22 @@
                               {keyfile, Key}}];
         _ ->
             Options
+  end,
+  {_, IpTuple} = inet:parse_address(MyHost),
+  {_, RE} = re:compile("^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$"), 
+  case re:run(MyHost, RE) of
+      nomatch ->
+        {_, IpTuple} = inet:parse_address(MyHost),
+        case erlang:tuple_size(IpTuple) of
+            8 ->
+                Options ++ [{tcp_options, [inet6]}];
+            4 ->
+                Options ++ [{tcp_options, [inet]}];
+            _ ->
+                Options
+        end;
+       _ ->
+          Options
   end
 end}.
 
