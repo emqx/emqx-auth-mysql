@@ -81,36 +81,26 @@
               {encoding, utf8},
               {query_timeout, Timeout},
               {keep_alive, true}],
-  case cuttlefish:conf_get("auth.mysql.ssl", Conf) of
-        true ->
-            CA = cuttlefish:conf_get("auth.mysql.ssl.cafile", Conf),
-            Cert = cuttlefish:conf_get("auth.mysql.ssl.certfile", Conf),
-            Key = cuttlefish:conf_get("auth.mysql.ssl.keyfile", Conf),
-            Options ++ [{ssl, {server_name_indication, disable},
-                              {cacertfile, CA},
-                              {certfile, Cert},
-                              {keyfile, Key}}];
-        _ ->
-            Options
-  end,
-  {_, IpTuple} = inet:parse_address(MyHost),
-  {_, RE} = re:compile("^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$"), 
-  case re:run(MyHost, RE) of
-      nomatch ->
-        {_, IpTuple} = inet:parse_address(MyHost),
-        case erlang:tuple_size(IpTuple) of
-            8 ->
-                Options ++ [{tcp_options, [inet6]}];
-            4 ->
-                Options ++ [{tcp_options, [inet]}];
+  Options1 =
+      case cuttlefish:conf_get("auth.mysql.ssl", Conf) of
+            true ->
+                CA = cuttlefish:conf_get("auth.mysql.ssl.cafile", Conf),
+                Cert = cuttlefish:conf_get("auth.mysql.ssl.certfile", Conf),
+                Key = cuttlefish:conf_get("auth.mysql.ssl.keyfile", Conf),
+                Options ++ [{ssl, {server_name_indication, disable},
+                                  {cacertfile, CA},
+                                  {certfile, Cert},
+                                  {keyfile, Key}}];
             _ ->
                 Options
-        end;
-       _ ->
-          Options
+      end,
+  case inet:parse_address(MyHost) of
+      {ok, Ip} when tuple_size(Ip) =:= 8 ->
+          [{tcp_options, [inet6]} | Options1];
+      _ ->
+          Options1
   end
 end}.
-
 
 {mapping, "auth.mysql.auth_query", "emqx_auth_mysql.auth_query", [
   {datatype, string}
