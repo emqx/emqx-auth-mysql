@@ -70,19 +70,21 @@
                             "(7, 0, 'bcrypt', '$2y$16$rEVsDarhgHYB0TGnDFJzyu5f.T.Ha9iXMTk9J36NCMWWM7O16qyaK', 'salt'),"
                             "(8, 0, 'bcrypt_wrong', '$2y$16$rEVsDarhgHYB0TGnDFJzyu', 'salt')">>).
 
+%%--------------------------------------------------------------------
+%% Setups
+%%--------------------------------------------------------------------
+
 all() ->
-    [{group, normal},
-     {group, ssl}].
+    [{group, nossl}, {group, ssl}].
 
 groups() ->
-    Cases = [check_auth, check_acl, acl_super, comment_config, placeholders],
-    [{normal, [sequence], Cases},
-     {ssl, [sequence], Cases}].
+    Cases = emqx_ct:all(?MODULE),
+    [{nossl, [sequence], Cases}, {ssl, [sequence], Cases}].
 
 init_per_group(ssl, Config) ->
     emqx_ct_helpers:start_apps([emqx_auth_mysql], fun set_special_configs_ssl/1),
     Config;
-init_per_group(normal, Config) ->
+init_per_group(nossl, Config) ->
     emqx_ct_helpers:start_apps([emqx_auth_mysql], fun set_special_configs/1),
     Config.
 
@@ -95,11 +97,33 @@ init_per_suite(Config) ->
 
 end_per_suite(_) ->
     ok.
+
+set_special_configs_ssl(emqx_auth_mysql) ->
+    Cfg = application:get_env(emqx_auth_mysql, server, []),
+    Path = emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/"),
+    SslCfg = [{ssl, {server_name_indication, disable},
+                    {cacertfile, Path ++ "ca.pem"},
+                    {certfile, Path ++ "client-cert.pem"},
+                    {keyfile, Path ++ "client-key.pem"}}],
+    application:set_env(emqx_auth_mysql, server, Cfg ++ SslCfg);
+
+set_special_configs_ssl(emqx) ->
+    set_special_configs(emqx).
+
+set_special_configs(emqx) ->
+    application:set_env(emqx, allow_anonymous, false),
+    application:set_env(emqx, enable_acl_cache, false),
+    application:set_env(emqx, plugins_loaded_file,
+                        emqx_ct_helpers:deps_path(emqx, "test/emqx_SUITE_data/loaded_plugins"));
+
+set_special_configs(_App) ->
+    ok.
+
 %%--------------------------------------------------------------------
 %% Test cases
 %%--------------------------------------------------------------------
 
-check_acl(_) ->
+t_check_acl(_) ->
     init_acl_(),
     User0 = #{zone => external,peerhost => {127,0,0,1}},
     allow = emqx_access_control:check_acl(User0, subscribe, <<"t1">>),
@@ -118,7 +142,7 @@ check_acl(_) ->
     allow = emqx_access_control:check_acl(User5, subscribe, <<"t1">>),
     allow = emqx_access_control:check_acl(User5, publish, <<"t1">>).
 
-acl_super(_Config) ->
+t_acl_super(_Config) ->
     init_auth_(),
     reload([{password_hash, plain},
             {auth_query, "select password from mqtt_user where username = '%u' limit 1"}]),
@@ -148,7 +172,7 @@ init_acl_() ->
     ok = mysql:query(Pid, ?CREATE_ACL_TABLE),
     ok = mysql:query(Pid, ?INIT_ACL).
 
-check_auth(_) ->
+t_check_auth(_) ->
     init_auth_(),
     Plain = #{clientid => <<"client1">>, username => <<"plain">>, zone => external},
     Md5 = #{clientid => <<"md5">>, username => <<"md5">>, zone => external},
@@ -187,12 +211,12 @@ check_auth(_) ->
     {error, _} = emqx_access_control:authenticate(User1#{password => <<"foo">>}),
     {error, not_authorized} = emqx_access_control:authenticate(Bcrypt#{password => <<"password">>}).
 
-comment_config(_) ->
+t_comment_config(_) ->
     application:stop(?APP),
     [application:unset_env(?APP, Par) || Par <- [acl_query, auth_query]],
     application:start(?APP).
 
-placeholders(_) ->
+t_placeholders(_) ->
     ClientA = #{username => <<"plain">>, clientid => <<"plain">>, zone => external},
 
     reload([{password_hash, plain},
@@ -233,22 +257,4 @@ reload(Config) when is_list(Config) ->
     ct:pal("~p: all configs after: ~p ", [?APP, application:get_all_env(?APP)]),
     application:start(?APP).
 
-set_special_configs_ssl(emqx_auth_mysql) ->
-    Cfg = application:get_env(emqx_auth_mysql, server, []),
-    SslCfg = [{ssl, {server_name_indication, disable},
-                    {cacertfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/ca.pem")},
-                    {certfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-cert.pem")},
-                    {keyfile, emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/client-key.pem")}}],
-    application:set_env(emqx_auth_mysql, server, Cfg ++ SslCfg);
 
-set_special_configs_ssl(emqx) ->
-    set_special_configs(emqx).
-
-set_special_configs(emqx) ->
-    application:set_env(emqx, allow_anonymous, false),
-    application:set_env(emqx, enable_acl_cache, false),
-    application:set_env(emqx, plugins_loaded_file,
-                        emqx_ct_helpers:deps_path(emqx, "test/emqx_SUITE_data/loaded_plugins"));
-
-set_special_configs(_App) ->
-    ok.

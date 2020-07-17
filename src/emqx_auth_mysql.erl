@@ -46,7 +46,7 @@ check(ClientInfo = #{password := Password}, AuthResult,
                         {error, not_found};
                     {error, Reason} ->
                         ?LOG(error, "[MySQL] query '~p' failed: ~p", [AuthSql, Reason]),
-                        {error, not_found}
+                        {error, Reason}
                 end,
     case CheckPass of
         ok ->
