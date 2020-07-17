@@ -58,8 +58,7 @@ connect(Options) ->
             {error, Reason};
         {error, Reason} ->
             ?LOG(error, "[MySQL] Can't connect to MySQL server: ~p", [Reason]),
-            {error, Reason};
-        Other -> Other
+            {error, Reason}
     end.
 
 query(Sql, Params, ClientInfo) ->

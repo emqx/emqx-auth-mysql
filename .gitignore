@@ -28,3 +28,4 @@ rebar3.crashdump
 etc/emqx_auth_mysql.conf.rendered
 .rebar3/
 *.swp
+.DS_Store
