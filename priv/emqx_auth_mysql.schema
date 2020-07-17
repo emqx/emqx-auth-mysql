@@ -95,7 +95,7 @@
                 Options
       end,
   case inet:parse_address(MyHost) of
-      {ok, Ip} when tuple_size(Ip) =:= 8 ->
+      {ok, IpAddr} when tuple_size(IpAddr) =:= 8 ->
           [{tcp_options, [inet6]} | Options1];
       _ ->
           Options1
