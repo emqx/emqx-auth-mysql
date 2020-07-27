@@ -17,15 +17,12 @@
 -module(emqx_auth_mysql_SUITE).
 
 -compile(export_all).
+-compile(nowarn_export_all).
 
--define(PID, emqx_auth_mysql).
-
--define(APP, ?PID).
+-define(APP, emqx_auth_mysql).
 
 -include_lib("emqx/include/emqx.hrl").
-
 -include_lib("eunit/include/eunit.hrl").
-
 -include_lib("common_test/include/ct.hrl").
 
 -define(DROP_ACL_TABLE, <<"DROP TABLE IF EXISTS mqtt_acl">>).
@@ -75,40 +72,17 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [{group, nossl}, {group, ssl}].
+    emqx_ct:all(?MODULE).
 
-groups() ->
-    Cases = emqx_ct:all(?MODULE),
-    [{nossl, [sequence], Cases}, {ssl, [sequence], Cases}].
-
-init_per_group(ssl, Config) ->
-    emqx_ct_helpers:start_apps([emqx_auth_mysql], fun set_special_configs_ssl/1),
-    Config;
-init_per_group(nossl, Config) ->
+init_per_suite(Cfg) ->
     emqx_ct_helpers:start_apps([emqx_auth_mysql], fun set_special_configs/1),
-    Config.
-
-end_per_group(_, Config) ->
-    emqx_ct_helpers:stop_apps([emqx_auth_mysql]),
-    Config.
-
-init_per_suite(Config) ->
-    Config.
+    init_mysql_data(),
+    Cfg.
 
 end_per_suite(_) ->
+    deinit_mysql_data(),
+    emqx_ct_helpers:stop_apps([emqx_auth_mysql]),
     ok.
-
-set_special_configs_ssl(emqx_auth_mysql) ->
-    Cfg = application:get_env(emqx_auth_mysql, server, []),
-    Path = emqx_ct_helpers:deps_path(emqx_auth_mysql, "test/emqx_auth_mysql_SUITE_data/"),
-    SslCfg = [{ssl, {server_name_indication, disable},
-                    {cacertfile, Path ++ "ca.pem"},
-                    {certfile, Path ++ "client-cert.pem"},
-                    {keyfile, Path ++ "client-key.pem"}}],
-    application:set_env(emqx_auth_mysql, server, Cfg ++ SslCfg);
-
-set_special_configs_ssl(emqx) ->
-    set_special_configs(emqx).
 
 set_special_configs(emqx) ->
     application:set_env(emqx, allow_anonymous, false),
@@ -119,12 +93,28 @@ set_special_configs(emqx) ->
 set_special_configs(_App) ->
     ok.
 
+init_mysql_data() ->
+    {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?APP})),
+    %% Users
+    ok = mysql:query(Pid, ?DROP_AUTH_TABLE),
+    ok = mysql:query(Pid, ?CREATE_AUTH_TABLE),
+    ok = mysql:query(Pid, ?INIT_AUTH),
+
+    %% ACLs
+    ok = mysql:query(Pid, ?DROP_ACL_TABLE),
+    ok = mysql:query(Pid, ?CREATE_ACL_TABLE),
+    ok = mysql:query(Pid, ?INIT_ACL).
+
+deinit_mysql_data() ->
+    {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?APP})),
+    ok = mysql:query(Pid, ?DROP_AUTH_TABLE),
+    ok = mysql:query(Pid, ?DROP_ACL_TABLE).
+
 %%--------------------------------------------------------------------
 %% Test cases
 %%--------------------------------------------------------------------
 
 t_check_acl(_) ->
-    init_acl_(),
     User0 = #{zone => external,peerhost => {127,0,0,1}},
     allow = emqx_access_control:check_acl(User0, subscribe, <<"t1">>),
     User1 = #{zone => external, clientid => <<"c1">>, username => <<"u1">>, peerhost => {127,0,0,1}},
@@ -143,7 +133,6 @@ t_check_acl(_) ->
     allow = emqx_access_control:check_acl(User5, publish, <<"t1">>).
 
 t_acl_super(_Config) ->
-    init_auth_(),
     reload([{password_hash, plain},
             {auth_query, "select password from mqtt_user where username = '%u' limit 1"}]),
     {ok, C} = emqtt:start_link([{host, "localhost"},
@@ -166,14 +155,7 @@ t_acl_super(_Config) ->
     end,
     emqtt:disconnect(C).
 
-init_acl_() ->
-    {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
-    ok = mysql:query(Pid, ?DROP_ACL_TABLE),
-    ok = mysql:query(Pid, ?CREATE_ACL_TABLE),
-    ok = mysql:query(Pid, ?INIT_ACL).
-
 t_check_auth(_) ->
-    init_auth_(),
     Plain = #{clientid => <<"client1">>, username => <<"plain">>, zone => external},
     Md5 = #{clientid => <<"md5">>, username => <<"md5">>, zone => external},
     Sha = #{clientid => <<"sha">>, username => <<"sha">>, zone => external},
@@ -236,25 +218,11 @@ t_placeholders(_) ->
     {ok, _} =
         emqx_access_control:authenticate(ClientA#{password => <<"plain">>, dn => <<"a_dn_val">>}).
 
-set_cmd(Key) ->
-    emqx_cli_config:run(["config", "set", string:join(["auth.mysql", Key], "."), "--app=emqx_auth_mysql"]).
-
-init_auth_() ->
-    {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
-    ok = mysql:query(Pid, ?DROP_AUTH_TABLE),
-    ok = mysql:query(Pid, ?CREATE_AUTH_TABLE),
-    ok = mysql:query(Pid, ?INIT_AUTH).
-
-drop_table_(Tab) ->
-    {ok, Pid} = ecpool_worker:client(gproc_pool:pick_worker({ecpool, ?PID})),
-    ok = mysql:query(Pid, Tab).
+%%--------------------------------------------------------------------
+%% Internal funcs
+%%--------------------------------------------------------------------
 
 reload(Config) when is_list(Config) ->
-    ct:pal("~p: all configs before: ~p ", [?APP, application:get_all_env(?APP)]),
-    ct:pal("~p: trying to reload config to: ~p ", [?APP, Config]),
     application:stop(?APP),
     [application:set_env(?APP, K, V) || {K, V} <- Config],
-    ct:pal("~p: all configs after: ~p ", [?APP, application:get_all_env(?APP)]),
     application:start(?APP).
-
-
