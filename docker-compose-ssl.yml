@@ -17,6 +17,10 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: public
       MYSQL_DATABASE: mqtt
+    volumes:
+      - ./test/emqx_auth_mysql_SUITE_data/ca.pem:/etc/certs/ca-cert.pem
+      - ./test/emqx_auth_mysql_SUITE_data/server-cert.pem:/etc/certs/server-cert.pem
+      - ./test/emqx_auth_mysql_SUITE_data/server-key.pem:/etc/certs/server-key.pem
     networks:
       - emqx_bridge
     command:
@@ -28,6 +32,9 @@ services:
       --lower_case_table_names=1
       --max_allowed_packet=128M
       --skip-symbolic-links
+      --ssl-ca=/etc/certs/ca.pem
+      --ssl-cert=/etc/certs/server-cert.pem
+      --ssl-key=/etc/certs/server-key.pem
 
 networks:
   emqx_bridge:
