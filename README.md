@@ -5,6 +5,14 @@ Authentication, ACL with MySQL Database.
 
 Notice: changed mysql driver to [mysql-otp](https://github.com/mysql-otp/mysql-otp).
 
+Features
+---------
+
+- Full *Authentication*, *Superuser*, *ACL* support
+- IPv4, IPv6 and TLS support
+- Connection pool by [ecpool](https://github.com/emqx/ecpool)
+- Completely cover MySQL 5.7, MySQL 8 in our tests
+
 Build Plugin
 -------------
 
@@ -56,6 +64,8 @@ auth.mysql.database = mqtt
 ## Variables:
 ##  - %u: username
 ##  - %c: clientid
+##  - %C: common name of client TLS cert
+##  - %d: subject of client TLS cert
 ##
 auth.mysql.auth_query = select password from mqtt_user where username = '%u' limit 1
 ## auth.mysql.auth_query = select password_hash as password from mqtt_user where username = '%u' limit 1
@@ -85,6 +95,8 @@ auth.mysql.password_hash = sha256
 ## Variables:
 ##  - %u: username
 ##  - %c: clientid
+##  - %C: common name of client TLS cert
+##  - %d: subject of client TLS cert
 auth.mysql.super_query = select is_superuser from mqtt_user where username = '%u' limit 1
 
 ## ACL query.
@@ -95,6 +107,7 @@ auth.mysql.super_query = select is_superuser from mqtt_user where username = '%u
 ##  - %a: ipaddr
 ##  - %u: username
 ##  - %c: clientid
+## Note: You can add the 'ORDER BY' statement to control the rules match order
 auth.mysql.acl_query = select allow, ipaddr, username, clientid, access, topic from mqtt_acl where ipaddr = '%a' or username = '%u' or username = '$all' or clientid = '%c'
 
 ```
