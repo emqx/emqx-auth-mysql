@@ -55,12 +55,13 @@ load_auth_hook(AuthQuery) ->
     {ok, HashType} = application:get_env(?APP, password_hash),
     Params = #{auth_query  => AuthQuery,
                super_query => SuperQuery,
-               hash_type   => HashType},
+               hash_type   => HashType,
+               pool => ?APP},
     emqx:hook('client.authenticate', fun emqx_auth_mysql:check/3, [Params]).
 
 load_acl_hook(AclQuery) ->
     ok = emqx_acl_mysql:register_metrics(),
-    emqx:hook('client.check_acl', fun emqx_acl_mysql:check_acl/5, [#{acl_query => AclQuery}]).
+    emqx:hook('client.check_acl', fun emqx_acl_mysql:check_acl/6, [#{acl_query => AclQuery, pool =>?APP}]).
 
 %%--------------------------------------------------------------------
 %% Internal function

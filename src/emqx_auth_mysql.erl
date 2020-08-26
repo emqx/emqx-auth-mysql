@@ -36,8 +36,9 @@ register_metrics() ->
 check(ClientInfo = #{password := Password}, AuthResult,
       #{auth_query  := {AuthSql, AuthParams},
         super_query := SuperQuery,
-        hash_type   := HashType}) ->
-    CheckPass = case emqx_auth_mysql_cli:query(AuthSql, AuthParams, ClientInfo) of
+        hash_type   := HashType,
+        pool := Pool}) ->
+    CheckPass = case emqx_auth_mysql_cli:query(Pool, AuthSql, AuthParams, ClientInfo) of
                     {ok, [<<"password">>], [[PassHash]]} ->
                         check_pass({PassHash, Password}, HashType);
                     {ok, [<<"password">>, <<"salt">>], [[PassHash, Salt]]} ->
@@ -51,7 +52,7 @@ check(ClientInfo = #{password := Password}, AuthResult,
     case CheckPass of
         ok ->
             emqx_metrics:inc(?AUTH_METRICS(success)),
-            {stop, AuthResult#{is_superuser => is_superuser(SuperQuery, ClientInfo),
+            {stop, AuthResult#{is_superuser => is_superuser(Pool, SuperQuery, ClientInfo),
                                 anonymous => false,
                                 auth_result => success}};
         {error, not_found} ->
@@ -66,10 +67,10 @@ check(ClientInfo = #{password := Password}, AuthResult,
 %% Is Superuser?
 %%--------------------------------------------------------------------
 
--spec(is_superuser(maybe({string(), list()}), emqx_types:client()) -> boolean()).
-is_superuser(undefined, _ClientInfo) -> false;
-is_superuser({SuperSql, Params}, ClientInfo) ->
-    case emqx_auth_mysql_cli:query(SuperSql, Params, ClientInfo) of
+-spec(is_superuser(string(), maybe({string(), list()}), emqx_types:client()) -> boolean()).
+is_superuser(_Pool, undefined, _ClientInfo) -> false;
+is_superuser(Pool, {SuperSql, Params}, ClientInfo) ->
+    case emqx_auth_mysql_cli:query(Pool, SuperSql, Params, ClientInfo) of
         {ok, [_Super], [[1]]} ->
             true;
         {ok, [_Super], [[_False]]} ->
