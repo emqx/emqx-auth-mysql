@@ -67,7 +67,7 @@ check(ClientInfo = #{password := Password}, AuthResult,
 %% Is Superuser?
 %%--------------------------------------------------------------------
 
--spec(is_superuser(string(), maybe({string(), list()}), emqx_types:client()) -> boolean()).
+-spec(is_superuser(atom(), maybe({string(), list()}), emqx_types:client()) -> boolean()).
 is_superuser(_Pool, undefined, _ClientInfo) -> false;
 is_superuser(Pool, {SuperSql, Params}, ClientInfo) ->
     case emqx_auth_mysql_cli:query(Pool, SuperSql, Params, ClientInfo) of
