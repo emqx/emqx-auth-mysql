@@ -24,7 +24,7 @@
 
 -export([ parse_query/1
         , connect/1
-        , query/3
+        , query/4
         ]).
 
 %%--------------------------------------------------------------------
@@ -61,8 +61,8 @@ connect(Options) ->
             {error, Reason}
     end.
 
-query(Sql, Params, ClientInfo) ->
-    ecpool:with_client(?APP, fun(C) -> mysql:query(C, Sql, replvar(Params, ClientInfo)) end).
+query(Pool, Sql, Params, ClientInfo) ->
+    ecpool:with_client(Pool, fun(C) -> mysql:query(C, Sql, replvar(Params, ClientInfo)) end).
 
 replvar(Params, ClientInfo) ->
     replvar(Params, ClientInfo, []).

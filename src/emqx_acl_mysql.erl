@@ -31,17 +31,17 @@
 register_metrics() ->
     lists:foreach(fun emqx_metrics:ensure/1, ?ACL_METRICS).
 
-check_acl(ClientInfo, PubSub, Topic, NoMatchAction, State) ->
-    case do_check_acl(ClientInfo, PubSub, Topic, NoMatchAction, State) of
+check_acl( ClientInfo, PubSub, Topic, NoMatchAction, #{pool := Pool} = State) ->
+    case do_check_acl(Pool, ClientInfo, PubSub, Topic, NoMatchAction, State) of
         ok -> emqx_metrics:inc(?ACL_METRICS(ignore)), ok;
         {stop, allow} -> emqx_metrics:inc(?ACL_METRICS(allow)), {stop, allow};
         {stop, deny} -> emqx_metrics:inc(?ACL_METRICS(deny)), {stop, deny}
     end.
 
-do_check_acl(#{username := <<$$, _/binary>>}, _PubSub, _Topic, _NoMatchAction, _State) ->
+do_check_acl(_Pool, #{username := <<$$, _/binary>>}, _PubSub, _Topic, _NoMatchAction, _State) ->
     ok;
-do_check_acl(ClientInfo, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, AclParams}}) ->
-    case emqx_auth_mysql_cli:query(AclSql, AclParams, ClientInfo) of
+do_check_acl(Pool, ClientInfo, PubSub, Topic, _NoMatchAction, #{acl_query := {AclSql, AclParams}}) ->
+    case emqx_auth_mysql_cli:query(Pool, AclSql, AclParams, ClientInfo) of
         {ok, _Columns, []} -> ok;
         {ok, _Columns, Rows} ->
             Rules = filter(PubSub, compile(Rows)),
