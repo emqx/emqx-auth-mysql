@@ -74,7 +74,7 @@ replvar(["'%u'" | Params], ClientInfo, Acc) ->
     replvar(Params, ClientInfo, [safe_get(username, ClientInfo) | Acc]);
 replvar(["'%c'" | Params], ClientInfo = #{clientid := ClientId}, Acc) ->
     replvar(Params, ClientInfo, [ClientId | Acc]);
-replvar(["'%a'" | Params], ClientInfo = #{peername := {IpAddr, _}}, Acc) ->
+replvar(["'%a'" | Params], ClientInfo = #{peerhost := IpAddr}, Acc) ->
     replvar(Params, ClientInfo, [inet_parse:ntoa(IpAddr) | Acc]);
 replvar(["'%C'" | Params], ClientInfo, Acc) ->
     replvar(Params, ClientInfo, [safe_get(cn, ClientInfo)| Acc]);
