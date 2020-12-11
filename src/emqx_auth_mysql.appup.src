@@ -1,6 +1,7 @@
 %% -*-: erlang -*-
-{"4.2.3",
+{VSN,
    [
+    {<<".*">>, []},
     {"4.2.2", [
        {load_module, emqx_auth_mysql_cli, brutal_purge, soft_purge, []}
      ]},
@@ -12,6 +13,7 @@
      ]}
    ],
    [
+     {<<".*">>, []},
      {"4.2.2", [
        {load_module, emqx_auth_mysql_cli, brutal_purge, soft_purge, []}
      ]},
