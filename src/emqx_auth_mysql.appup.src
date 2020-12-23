@@ -1,27 +1,15 @@
 %% -*-: erlang -*-
 {VSN,
-   [
-    {<<".*">>, []},
-    {"4.2.2", [
-       {load_module, emqx_auth_mysql_cli, brutal_purge, soft_purge, []}
-     ]},
-     {"4.2.1", [
-       {load_module, emqx_auth_mysql_cli, brutal_purge, soft_purge, []}
-     ]},
-     {"4.2.0", [
-       {load_module, emqx_auth_mysql_cli, brutal_purge, soft_purge, []}
-     ]}
-   ],
-   [
-     {<<".*">>, []},
-     {"4.2.2", [
-       {load_module, emqx_auth_mysql_cli, brutal_purge, soft_purge, []}
-     ]},
-     {"4.2.1", [
-       {load_module, emqx_auth_mysql_cli, brutal_purge, soft_purge, []}
-     ]},
-     {"4.2.0", [
-       {load_module, emqx_auth_mysql_cli, brutal_purge, soft_purge, []}
-     ]}
-   ]
+  [
+    {<<"4.2.[0-4]">>, [
+      {load_module, emqx_auth_mysql_cli, brutal_purge, soft_purge, []}
+    ]},
+    {<<".*">>, []}
+  ],
+  [
+    {<<"4.2.[0-4]">>, [
+      {load_module, emqx_auth_mysql_cli, brutal_purge, soft_purge, []}
+    ]},
+    {<<".*">>, []}
+  ]
 }.
