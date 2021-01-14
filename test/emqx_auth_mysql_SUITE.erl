@@ -164,7 +164,7 @@ t_check_auth(_) ->
     BcryptFoo = #{clientid => <<"bcrypt_foo">>, username => <<"bcrypt_foo">>, zone => external},
     User1 = #{clientid => <<"bcrypt_foo">>, username => <<"user">>, zone => external},
     Bcrypt = #{clientid => <<"bcrypt">>, username => <<"bcrypt">>, zone => external},
-    BcryptWrong = #{clientid => <<"bcrypt_wrong">>, username => <<"bcrypt_wrong">>, zone => external},
+    %
     reload([{password_hash, plain}]),
     {ok, #{is_superuser := true}} = emqx_access_control:authenticate(Plain#{password => <<"plain">>}),
     reload([{password_hash, md5}]),
