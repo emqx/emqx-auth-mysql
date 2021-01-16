@@ -33,6 +33,7 @@ jobs:
                 if [ "$NETWORK_TYPE" = "ipv6" ];then docker network create --driver bridge --ipv6 --subnet fd15:555::/64  test_emqx_bridge --attachable; fi
                 if [ "$CONNECT_TYPE" = "ssl" ]; then
                     docker-compose -f ./docker-compose-ssl.yml -p test up -d
+                    docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "sed -i '/auth.mysql.ssl = off/c auth.mysql.ssl = on' /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
                     docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.ssl.cafile = /emqx_auth_mysql/test/emqx_auth_mysql_SUITE_data/ca.pem' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
                     docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.ssl.certfile = /emqx_auth_mysql/test/emqx_auth_mysql_SUITE_data/client-cert.pem' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
                     docker exec -i $(docker ps -a -f name=test_erlang_1 -q) sh -c "echo 'auth.mysql.ssl.keyfile = /emqx_auth_mysql/test/emqx_auth_mysql_SUITE_data/client-key.pem' >> /emqx_auth_mysql/etc/emqx_auth_mysql.conf"
